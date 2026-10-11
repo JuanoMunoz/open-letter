@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { sql } from "drizzle-orm";
 import { getDb } from "@/db";
 
@@ -53,8 +54,15 @@ async function main() {
   }
   console.log("[migrate] Aplicando esquema...");
   const db = getDb();
-  await db.execute(sql.raw(MIGRATIONS_SQL));
-  console.log("[migrate] OK: letters, photos, rate_events listas.");
+  // El driver HTTP de Neon no admite múltiples comandos por statement:
+  // se ejecuta una sentencia a la vez (todas son IF NOT EXISTS, idempotentes).
+  const statements = MIGRATIONS_SQL.split(";")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  for (const stmt of statements) {
+    await db.execute(sql.raw(stmt));
+  }
+  console.log(`[migrate] OK: ${statements.length} sentencias (letters, photos, rate_events listas).`);
 }
 
 main().catch((e) => {

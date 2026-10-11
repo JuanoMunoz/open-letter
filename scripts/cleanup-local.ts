@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { runCleanup } from "@/lib/cleanup";
 
 /** Corre la misma limpieza del cron en local: npm run cleanup. Requiere .env con CRON_SECRET/DB. */

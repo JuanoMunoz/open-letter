@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { getDb } from "@/db";
 import { letters, photos } from "@/db/schema";
 import { ejemploLetter } from "@/lib/letter-data";

@@ -6,7 +6,8 @@ import { Particles } from "./Particles";
 import { DotNav } from "./DotNav";
 import { SealedEnvelope } from "./SealedEnvelope";
 import { BrandMark } from "@/components/BrandMark";
-import { getTemplate, themeVars, scriptFamily } from "@/templates";
+import { getTemplate, resolveTheme, themeVars, scriptFamily } from "@/templates";
+import type { ParticleKind } from "@/templates/types";
 import {
   SectionCover,
   SectionMessage,
@@ -20,23 +21,31 @@ import type { LetterView, SectionKind } from "./types";
 
 export function LetterViewer({ letter }: { letter: LetterView }) {
   const template = useMemo(() => getTemplate(letter.templateId), [letter.templateId]);
-  // Columnas posicionales → defs de la plantilla (Fase B lo lleva a `sections` jsonb).
-  const bodies = useMemo(
-    () => [letter.loveText, letter.storyText, letter.dreamsText],
-    [letter.loveText, letter.storyText, letter.dreamsText],
-  );
+  const theme = useMemo(() => resolveTheme(template, letter.theme), [template, letter.theme]);
+  // Secciones guardadas (por key) cruzadas con la plantilla (títulos/iconos).
   const cardDefs = useMemo(
     () =>
-      template.sections.slice(1).map((def, i) => ({ def, body: bodies[i] ?? null })),
-    [template, bodies],
+      template.sections.slice(1).flatMap((def) => {
+        const s = letter.sections.find((x) => x.key === def.key);
+        const body = (s?.body ?? "").trim();
+        if (!body) return [];
+        return [
+          {
+            key: def.key,
+            def: { ...def, viewerTitle: s?.title || def.viewerTitle, icon: s?.icon || def.icon },
+            body,
+          },
+        ];
+      }),
+    [template, letter.sections],
   );
   const sections: SectionKind[] = useMemo(() => {
     const list: SectionKind[] = [
       { kind: "cover", key: "cover", label: "Portada" },
       { kind: "message", key: "message", label: template.sections[0]?.label ?? "Mensaje" },
     ];
-    cardDefs.forEach(({ def, body }) => {
-      if (body) list.push({ kind: "card", key: def.key, label: def.viewerTitle });
+    cardDefs.forEach(({ key, def, body }) => {
+      list.push({ kind: "card", key, label: def.viewerTitle });
     });
     letter.photos.forEach((_, i) =>
       list.push({ kind: "photo", key: `photo-${i}`, label: `Foto ${i + 1}`, index: i }),
@@ -109,17 +118,17 @@ export function LetterViewer({ letter }: { letter: LetterView }) {
 
   let cardOrder = 0;
 
-  if (!opened && template.opening !== "ninguna") {
+  if (!opened && (letter.opening || template.opening) !== "ninguna") {
     return (
       <SealedEnvelope
         letterId={letter.id}
         recipientName={letter.recipientName}
         invite={template.openingInvite}
         tapLabel={(t, n) => template.tapCounter(t, n)}
-        brand={template.theme.brand}
-        brandSoft={template.theme.brandSoft}
-        paper={template.theme.paper}
-        scriptFont={scriptFamily(template.theme.font)}
+        brand={theme.brand}
+        brandSoft={theme.brandSoft}
+        paper={theme.paper}
+        scriptFont={scriptFamily(theme.font)}
         onDone={() => setOpened(true)}
       />
     );
@@ -130,12 +139,12 @@ export function LetterViewer({ letter }: { letter: LetterView }) {
   return (
     <div
       className="flex min-h-dvh items-center justify-center sm:py-6"
-      style={{ background: `linear-gradient(180deg, var(--bg0) 0%, var(--bg1) 100%)`, ...themeVars(template.theme) }}
+      style={{ background: `linear-gradient(180deg, var(--bg0) 0%, var(--bg1) 100%)`, ...themeVars(theme) }}
     >
       {/* Marco de teléfono en escritorio; pantalla completa en móvil */}
       <div className="relative h-[100dvh] w-full overflow-hidden bg-white sm:h-[min(92vh,900px)] sm:w-auto sm:aspect-[9/19] sm:rounded-[36px] sm:border sm:border-white/60 sm:shadow-[0_30px_80px_rgba(0,0,0,.12)]">
         <BlurBackground photoUrl={activePhotoUrl} clear={isPhotoSection} />
-        <Particles kind={template.particles} color={template.theme.brand} />
+        <Particles kind={(letter.theme?.particles as ParticleKind | undefined) ?? template.particles} color={theme.brand} />
 
         <div ref={scrollRef} className="snap-frame relative z-10 h-full w-full overflow-y-auto">
           {sections.map((s, i) => (

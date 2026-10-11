@@ -53,6 +53,37 @@ export interface SectionDef {
   maxLength: number;
 }
 
+/** Sección guardada en `letters.sections` (jsonb). */
+export interface SectionItem {
+  key: string;
+  /** text | reasons | openwhen | promises | free */
+  kind: string;
+  title: string;
+  icon: string;
+  body: string;
+  /** Ítems para listas (razones, promesas, ábrela-cuándo). */
+  items?: string[];
+  enabled: boolean;
+  order: number;
+}
+
+/** Hito de `letters.timeline` (jsonb). */
+export interface TimelineItem {
+  date?: string;
+  title: string;
+  body: string;
+  assetId?: string;
+}
+
+/** Tema guardado en `letters.theme` (jsonb, solo listas cerradas). */
+export interface LetterTheme {
+  colorId?: string;
+  font?: string;
+  particles?: string;
+  background?: string;
+  nightMode?: boolean;
+}
+
 export interface CoverCopy {
   greeting: string;
   closing: string;

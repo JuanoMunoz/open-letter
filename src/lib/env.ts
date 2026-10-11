@@ -8,6 +8,13 @@ const envSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
   LETTER_TTL_DAYS: z.coerce.number().int().min(1).max(30).default(7),
   IP_HASH_SALT: z.string().min(1, "IP_HASH_SALT es requerido (openssl rand -hex 16)"),
+  /** HMAC para cookies de acceso (cartas con contraseña, Fase E). */
+  LETTER_COOKIE_SECRET: z.string().min(16).optional(),
+  /** IA de escritura (Fase P2, opcional). */
+  ANTHROPIC_API_KEY: z.string().min(1).optional(),
+  ANTHROPIC_MODEL: z.string().min(1).optional(),
+  /** Programación de apertura (P2, default 14). */
+  MAX_SCHEDULE_DAYS: z.coerce.number().int().min(1).max(60).default(14),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -37,6 +44,7 @@ export function getEnv(): Env {
         NEXT_PUBLIC_APP_URL: "http://localhost:3000",
         LETTER_TTL_DAYS: Number(process.env.LETTER_TTL_DAYS ?? 7),
         IP_HASH_SALT: process.env.IP_HASH_SALT ?? "dummy-salt",
+        MAX_SCHEDULE_DAYS: Number(process.env.MAX_SCHEDULE_DAYS ?? 14),
       };
       return cached;
     }

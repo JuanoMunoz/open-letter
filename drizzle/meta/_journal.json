@@ -15,6 +15,27 @@
       "when": 1791741280810,
       "tag": "0001_spotty_grandmaster",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791742999611,
+      "tag": "0002_template_data",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791742999612,
+      "tag": "0003_drop_legacy_texts",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791743301129,
+      "tag": "0004_photos_merge",
+      "breakpoints": true
     }
   ]
 }

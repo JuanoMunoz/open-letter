@@ -7,6 +7,8 @@ import { gracias } from "./gracias";
 import { perdon } from "./perdon";
 
 export * from "./types";
+export * from "./theme-palettes";
+import { THEME_PALETTES, type ThemeColorId } from "./theme-palettes";
 
 const decks: Record<LetterTemplate["id"], { es: LetterTemplate }> = {
   amor: amorDeck as { es: LetterTemplate },
@@ -28,6 +30,25 @@ export function getTemplate(id: string, locale: Locale = "es"): LetterTemplate {
   const deck = (decks as Record<string, { es: LetterTemplate }>)[id];
   if (!deck) return decks.amor[locale] ?? decks.amor.es;
   return deck[locale] ?? deck.es;
+}
+
+/** Tema efectivo: paleta elegida (si existe) sobre los colores de la plantilla. */
+export function resolveTheme(
+  template: LetterTemplate,
+  override?: { colorId?: string; font?: string; particles?: string } | null,
+): LetterTemplate["theme"] {
+  const base = template.theme;
+  if (!override) return base;
+  const palette =
+    THEME_PALETTES[(override.colorId as ThemeColorId) ?? ("" as ThemeColorId)];
+  return {
+    brand: palette?.brand ?? base.brand,
+    brandSoft: palette?.brandSoft ?? base.brandSoft,
+    paper: palette?.paper ?? base.paper,
+    ink: palette?.ink ?? base.ink,
+    bgGradient: palette?.bgGradient ?? base.bgGradient,
+    font: (override.font as LetterTemplate["theme"]["font"]) ?? base.font,
+  };
 }
 
 /** Variables CSS del tema para inyectar en la raíz del wizard/visor. */

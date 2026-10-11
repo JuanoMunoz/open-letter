@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { letters, photos } from "@/db/schema";
+import { letters, assets } from "@/db/schema";
 import { sha256Hex, safeEqualHex } from "@/lib/ids";
 import { getUtApi } from "@/lib/uploadthing-server";
 
@@ -20,8 +20,8 @@ export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: stri
   const ok = safeEqualHex(sha256Hex(token), letter.manageTokenHash);
   if (!ok) return NextResponse.json({ error: "Token inválido" }, { status: 403 });
 
-  const photoRows = await db.select().from(photos).where(eq(photos.letterId, id));
-  const keys = photoRows.map((p) => p.utKey).filter(Boolean);
+  const assetRows = await db.select().from(assets).where(eq(assets.letterId, id));
+  const keys = assetRows.map((p) => p.utKey).filter(Boolean);
   if (keys.length > 0) {
     try {
       await getUtApi().deleteFiles(keys);

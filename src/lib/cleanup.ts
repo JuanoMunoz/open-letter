@@ -1,6 +1,6 @@
 import { inArray, lte, lt } from "drizzle-orm";
 import { getDb } from "@/db";
-import { letters, photos, rateEvents } from "@/db/schema";
+import { letters, assets, rateEvents } from "@/db/schema";
 import { getUtApi } from "./uploadthing-server";
 import { ttlDays } from "./expiry";
 
@@ -38,10 +38,10 @@ export async function runCleanup(now = new Date()): Promise<CleanupResult> {
     const ids = expired.map((r) => r.id);
     if (ids.length === 0) break;
 
-    const photoRows = ids.length
-      ? await db.select({ utKey: photos.utKey }).from(photos).where(inArray(photos.letterId, ids))
+    const assetRows = ids.length
+      ? await db.select({ utKey: assets.utKey }).from(assets).where(inArray(assets.letterId, ids))
       : [];
-    const keys = photoRows.map((p) => p.utKey).filter(Boolean);
+    const keys = assetRows.map((p) => p.utKey).filter(Boolean);
 
     // Borra archivos primero; si falla, no borra la fila (reintento próximo cron).
     if (keys.length > 0) {
@@ -84,9 +84,9 @@ export async function runCleanup(now = new Date()): Promise<CleanupResult> {
       if (Date.now() - started > TIME_BUDGET_MS) break;
     }
     if (staleKeys.length > 0) {
-      // Solo borra los que NO estén referenciados en photos.
+      // Solo borra los que NO estén referenciados en assets (imagen o audio).
       const referenced = staleKeys.length
-        ? await db.select({ utKey: photos.utKey }).from(photos).where(inArray(photos.utKey, staleKeys.slice(0, 500)))
+        ? await db.select({ utKey: assets.utKey }).from(assets).where(inArray(assets.utKey, staleKeys.slice(0, 500)))
         : [];
       const refSet = new Set(referenced.map((r) => r.utKey));
       const safe = staleKeys.filter((k) => !refSet.has(k));

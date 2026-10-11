@@ -1,8 +1,16 @@
+import type { SectionItem, TimelineItem, LetterTheme } from "@/templates/types";
+
 export interface ViewerPhoto {
   url: string;
   caption: string | null;
   takenOn: string | null;
   place: string | null;
+}
+
+export interface ViewerAudio {
+  url: string;
+  durationS: number | null;
+  mime: string | null;
 }
 
 export interface LetterView {
@@ -13,12 +21,15 @@ export interface LetterView {
   specialDate: string | null;
   senderName: string | null;
   mainMessage: string;
-  loveText: string | null;
-  storyText: string | null;
-  dreamsText: string | null;
+  /** Secciones dinámicas (Fase B; Fase C añade kinds visuales). */
+  sections: SectionItem[];
+  timeline: TimelineItem[];
+  theme: LetterTheme;
+  opening: string;
   spotifyTrackId: string | null;
   expiresAt: string;
   photos: ViewerPhoto[];
+  audio: ViewerAudio | null;
 }
 
 export type SectionKind =

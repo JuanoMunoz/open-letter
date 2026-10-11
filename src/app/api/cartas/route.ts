@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb, clientIp } from "@/db";
-import { letters, photos } from "@/db/schema";
+import { letters, assets } from "@/db/schema";
 import { createLetterSchema } from "@/lib/schemas";
 import { newLetterId, newManageToken, sha256Hex, hashIp } from "@/lib/ids";
 import { expiresAtFromNow } from "@/lib/expiry";
-import { LIMITS, countRecentEvents, recordEvent } from "@/lib/ratelimit";
+import { LIMITS, countRecentEvents, recordEvent, isOwnedUpload } from "@/lib/ratelimit";
 
 /* Las rutas que usan Request son dinámicas por defecto. */
 
@@ -48,22 +48,63 @@ export async function POST(req: NextRequest) {
     console.warn("[POST /api/cartas] rate-limit omitido (sin DB):", (e as Error)?.message);
   }
 
-  if (data.photos.length > 10) {
+  // Une assets nuevos + fotos legado; el audio cuenta aparte (máx. 1).
+  const incoming = [
+    ...data.photos.map((p) => ({ ...p, kind: "image" as const })),
+    ...data.assets,
+  ];
+  const images = incoming.filter((a) => a.kind === "image");
+  const audios = incoming.filter((a) => a.kind === "audio");
+  if (images.length > 10) {
     return NextResponse.json({ error: "Máximo 10 fotos" }, { status: 400 });
   }
-  for (const p of data.photos) {
-    if (!p.key || p.key.length > 512 || p.key.includes("..")) {
-      return NextResponse.json({ error: "Clave de foto inválida" }, { status: 400 });
+  if (audios.length > 1) {
+    return NextResponse.json({ error: "Máximo 1 nota de voz" }, { status: 400 });
+  }
+  for (const a of incoming) {
+    if (!a.key || a.key.length > 512 || a.key.includes("..")) {
+      return NextResponse.json({ error: "Clave de archivo inválida" }, { status: 400 });
+    }
+    if (a.kind === "audio" && a.durationS != null && a.durationS > 60) {
+      return NextResponse.json({ error: "La nota de voz supera los 60 segundos" }, { status: 400 });
     }
   }
+
+  // Propiedad: cada ut_key debió subirlo esta IP en las últimas 2 h.
+  // (Si la DB no responde, se omite el chequeo como el resto de límites.)
+  try {
+    for (const a of incoming) {
+      if (!(await isOwnedUpload(ipHash, a.key))) {
+        return NextResponse.json(
+          { error: "Un archivo no proviene de tu sesión. Vuelve a subirlo." },
+          { status: 403 },
+        );
+      }
+    }
+  } catch (e) {
+    console.warn("[POST /api/cartas] ownership omitido (sin DB):", (e as Error)?.message);
+  }
+
+  // Secciones: contrato nuevo o legado posicional (compat wizard anterior).
+  const norm = (v?: string | null) => (v && v.trim() ? v.trim() : null);
+  const sectionsInput =
+    data.sections.length > 0
+      ? data.sections
+      : [
+          data.loveText ? { key: "love", kind: "text" as const, title: "", icon: "Heart", body: data.loveText, items: [] as string[], enabled: true, order: 0 } : null,
+          data.storyText ? { key: "story", kind: "text" as const, title: "", icon: "BookOpen", body: data.storyText, items: [] as string[], enabled: true, order: 1 } : null,
+          data.dreamsText ? { key: "dreams", kind: "text" as const, title: "", icon: "Sparkles", body: data.dreamsText, items: [] as string[], enabled: true, order: 2 } : null,
+        ].filter((x) => x !== null);
+  const sections = sectionsInput
+    .filter((s) => s.enabled !== false && ((s.body ?? "").trim() || (s.items ?? []).length > 0))
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    .map((s, i) => ({ ...s, order: i }));
 
   const id = newLetterId();
   const manageToken = newManageToken();
   const manageTokenHash = sha256Hex(manageToken);
   const now = new Date();
   const expiresAt = expiresAtFromNow(now);
-
-  const norm = (v?: string | null) => (v && v.trim() ? v.trim() : null);
 
   try {
     const db = getDb();
@@ -74,30 +115,39 @@ export async function POST(req: NextRequest) {
       specialDate: data.specialDate ?? null,
       senderName: norm(data.senderName),
       mainMessage: data.mainMessage.trim(),
-      loveText: norm(data.loveText),
-      storyText: norm(data.storyText),
-      dreamsText: norm(data.dreamsText),
       spotifyTrackId: data.spotifyTrackId ?? null,
       template: data.templateId,
+      theme: data.theme ?? {},
+      sections,
+      timeline: data.timeline ?? [],
+      opening: data.opening ?? undefined,
+      locale: data.locale ?? "es",
       manageTokenHash,
       ipHash,
       expiresAt,
     };
     // El driver HTTP no soporta transacciones interactivas: batch atómico.
     const stmts: unknown[] = [db.insert(letters).values(letterRow)];
-    data.photos.forEach((p, i) => {
+    const assetRows = [
+      ...images.map((a, i) => ({ ...a, position: i })),
+      ...audios.map((a, i) => ({ ...a, position: i })),
+    ];
+    for (const a of assetRows) {
       stmts.push(
-        db.insert(photos).values({
+        db.insert(assets).values({
           letterId: id,
-          utKey: p.key,
-          url: p.url,
-          position: i,
-          caption: norm(p.caption),
-          takenOn: p.takenOn ?? null,
-          place: norm(p.place),
+          kind: a.kind,
+          utKey: a.key,
+          url: a.url,
+          position: a.position,
+          caption: norm(a.caption),
+          takenOn: a.takenOn ?? null,
+          place: norm(a.place),
+          durationS: a.durationS ?? null,
+          mime: a.mime || null,
         }),
       );
-    });
+    }
     // batch existe en el driver neon-http; fallback secuencial si no.
     const dbAny = db as unknown as { batch?: (s: unknown[]) => Promise<unknown> };
     if (typeof dbAny.batch === "function") {

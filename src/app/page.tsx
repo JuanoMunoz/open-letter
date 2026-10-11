@@ -20,12 +20,6 @@ export default function Home() {
         >
           Crear carta →
         </Link>
-        <Link
-          href="/c/ejemplo"
-          className="rounded-full border border-[#D6D6DC] bg-white px-7 py-3.5 text-sm font-bold text-neutral-800 transition hover:border-[#E0698F]"
-        >
-          Ver carta de ejemplo
-        </Link>
       </div>
       <p className="mt-8 max-w-sm text-xs leading-relaxed text-[#6B6B76]">
         Sin cuentas ni apps. Creas el enlace, lo compartes y la magia hace el resto.

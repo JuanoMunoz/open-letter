@@ -18,13 +18,11 @@ Inter + Caveat (`next/font/google`) · Vercel (+ Cron).
 cp .env.example .env   # completa las variables (ver abajo)
 npm install
 npm run db:migrate      # crea letters, photos, rate_events (requiere DATABASE_URL)
-npm run db:seed         # carta de ejemplo en /c/ejemplo (no caduca)
 npm run dev             # http://localhost:3000
 ```
 
-Sin `.env` la app **arranca igual** en modo degradado: `/`, `/crear` y
-`/c/ejemplo` (datos en memoria) funcionan; crear cartas y subir fotos requieren
-Neon + UploadThing reales.
+Sin `.env` la app **arranca igual** en modo degradado: `/` y `/crear` (interfaz)
+funcionan; crear cartas, verlas y subir fotos requieren Neon + UploadThing reales.
 
 ## Variables de entorno
 
@@ -75,7 +73,6 @@ algo (en `next build` usa dummies para no bloquear el deploy).
   `{ lettersDeleted, filesDeleted, orphansDeleted, rateEventsDeleted, durationMs }`.
 - **En local:** `npm run cleanup` corre la misma lógica (`src/lib/cleanup.ts`).
 - **Plan Hobby:** cron 1 vez/día (±1 h); en Pro puedes usar `0 * * * *`.
-- La carta `/c/ejemplo` (seed) usa `expires_at = 9999-12-31` y nunca caduca.
 
 ## Límites anti-abuso
 
@@ -114,7 +111,7 @@ el `manageToken` del fragmento `#token=` (nunca viaja al servidor en logs).
 
 ```
 ├── drizzle/                  # migración generada (drizzle-kit generate)
-├── scripts/                  # migrate.ts · seed.ts · cleanup-local.ts
+├── scripts/                  # migrate.ts · cleanup-local.ts
 ├── vercel.json               # cron diario + región iad1
 └── src/
     ├── app/
@@ -141,7 +138,6 @@ el `manageToken` del fragmento `#token=` (nunca viaja al servidor en logs).
 | `npm run lint` | ESLint (0 errores). |
 | `npm run db:generate` | Regenera `drizzle/` desde el schema. |
 | `npm run db:migrate` | Aplica el DDL (`scripts/migrate.ts`, requiere DB). |
-| `npm run db:seed` | Crea `/c/ejemplo` (no caduca, requiere DB). |
 | `npm run db:studio` | Drizzle Studio. |
 | `npm run cleanup` | Limpieza local (misma lógica del cron). |
 | `npm run vercel-build` | Build command en Vercel (migra + compila). |
@@ -180,17 +176,17 @@ transiciones del wizard), contraste y focos visibles en el wizard.
 ## Estado de verificación
 
 Con `npm run lint` + `npm run build` en verde y pruebas en dev (`/`, `/crear`,
-`/c/ejemplo`, 404, `POST /api/cartas` → 400, cron sin auth → 401, DELETE sin
-token → 401). Pendiente con credenciales reales: subida de 3 fotos a
-UploadThing, expiración manual (`expires_at` pasado → `/expirada` + cron que
-borra fila y archivos), `DELETE` con token correcto/incorrecto, rate limits y
-Lighthouse móvil ≥ 85/95.
+404 de carta inexistente, `POST /api/cartas` → 400, cron sin auth → 401, DELETE sin
+token → 401). Pendiente con credenciales reales: crear carta con 3 fotos en
+UploadThing y abrir su `/c/[id]` en incógnito, expiración manual (`expires_at`
+pasado → `/expirada` + cron que borra fila y archivos), `DELETE` con token
+correcto/incorrecto, rate limits y Lighthouse móvil ≥ 85/95.
 
 ## Rutas principales
 
 `/` (landing) · `/crear` (wizard 3 pasos) · `/crear/exito/[id]` (enlace +
 copiar/compartir/eliminar con `#token=`) · `/c/[id]` (visor) ·
-`/c/ejemplo` (demo) · `POST /api/cartas` · `DELETE /api/cartas/[id]`
+`POST /api/cartas` · `DELETE /api/cartas/[id]`
 (header `x-manage-token`, hash en tiempo constante) ·
 `GET /api/cron/cleanup` · `POST /api/orphan` (huérfanos pre-creación).
 
@@ -204,8 +200,6 @@ copiar/compartir/eliminar con `#token=`) · `/c/[id]` (visor) ·
   `drizzle/0000_*.sql` se genera igual con `npm run db:generate`.
 - `src/lib/uploadthing-client.ts` + `uploadthing-server.ts` separados: el
   `UTApi` no puede importarse en el cliente.
-- `/c/ejemplo` funciona sin DB (fallback en memoria con los datos del seed) y
-  con DB si corres `npm run db:seed`.
 - Sin `react-hook-form` en el wizard final: el estado con fotos/compresión
   encajaba mejor en `useState` + validación zod compartida en el servidor;
   la dependencia queda instalada pero el formulario usa estado controlado con

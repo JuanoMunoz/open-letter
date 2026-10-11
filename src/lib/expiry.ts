@@ -12,10 +12,3 @@ export function expiresAtFromNow(now = new Date()): Date {
 export function isExpired(expiresAt: Date | string, now = new Date()): boolean {
   return new Date(expiresAt).getTime() <= now.getTime();
 }
-
-/** "9999-12-31" marca la carta de ejemplo que nunca caduca. */
-export const NEVER_EXPIRES = "9999-12-31T00:00:00.000Z";
-
-export function isNeverExpiring(expiresAt: Date | string): boolean {
-  return new Date(expiresAt).getFullYear() >= 9999;
-}

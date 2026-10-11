@@ -27,7 +27,7 @@ export async function runCleanup(now = new Date()): Promise<CleanupResult> {
   let filesDeleted = 0;
   let orphansDeleted = 0;
 
-  // 1. Cartas caducadas en lotes de 50 (excluye la carta ejemplo "ejemplo").
+  // 1. Cartas caducadas en lotes de 50.
   for (;;) {
     if (Date.now() - started > TIME_BUDGET_MS) break;
     const expired = await db
@@ -38,7 +38,6 @@ export async function runCleanup(now = new Date()): Promise<CleanupResult> {
     const ids = expired.map((r) => r.id);
     if (ids.length === 0) break;
 
-    // Filtra "ejemplo": su expires_at es 9999, nunca entra aquí por el where.
     const photoRows = ids.length
       ? await db.select({ utKey: photos.utKey }).from(photos).where(inArray(photos.letterId, ids))
       : [];

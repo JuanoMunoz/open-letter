@@ -93,7 +93,16 @@ algo (en `next build` usa dummies para no bloquear el deploy).
    borrado con limpieza del huérfano en UploadThing. Campo Spotify que acepta
    URL `open.spotify.com/track/…`, URLs `intl-es` y URIs `spotify:track:…`.
 
-**Visor (`/c/[id]`):** marco de teléfono en escritorio (pantalla completa en
+**Visor (`/c/[id]`):** ritual de apertura con **sobre sellado 3D** (three.js):
+cada carta exige entre **1 y 13 toques** (determinista por ID) para abrirse;
+cuerpo con bordes redondeados y relieve, solapas laterales, bolsillo y solapa
+superior que rota progresivamente; **lacre de cera en forma de corazón** con
+relieve (extruido + clearcoat) al centro, que se rompe con los primeros
+toques; carta interior con el nombre que sale al final. Iluminación de
+hemisferio + clave + relleno + contraluz con tone mapping ACES y encuadre
+adaptativo mobile-first. Accesible por teclado y omitido con
+`prefers-reduced-motion`.
+Luego: marco de teléfono en escritorio (pantalla completa en
 móvil), scroll-snap vertical con navegación por rueda, táctil, teclado
 (↑ ↓, PageUp/PageDown, espacio) y puntos laterales. Fondo difuminado con
 Ken Burns que se aclara en fotos, ~24 partículas en canvas (pausadas con la

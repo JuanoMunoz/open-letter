@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { BlurBackground } from "./BlurBackground";
 import { Particles } from "./Particles";
 import { DotNav } from "./DotNav";
+import { SealedEnvelope } from "./SealedEnvelope";
 import {
   SectionCover,
   SectionMessage,
@@ -33,6 +34,12 @@ export function LetterViewer({ letter }: { letter: LetterView }) {
   }, [letter]);
 
   const [active, setActive] = useState(0);
+  // Ritual de apertura: sobre sellado 3D (se omite con reduced-motion).
+  const [opened, setOpened] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches,
+  );
   const scrollRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Array<HTMLDivElement | null>>([]);
   // Typewriter "done" persistente por sección: no se reinicia al volver.
@@ -61,7 +68,9 @@ export function LetterViewer({ letter }: { letter: LetterView }) {
     );
     sectionRefs.current.forEach((el) => el && obs.observe(el));
     return () => obs.disconnect();
-  }, [sections.length]);
+    // `opened`: con el sobre sellado las secciones no existen; al abrirse hay
+    // que (re)conectar el observer o ninguna sección se activa (typewriter muerto).
+  }, [sections.length, opened]);
 
   const goTo = (i: number) => {
     sectionRefs.current[i]?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -86,6 +95,16 @@ export function LetterViewer({ letter }: { letter: LetterView }) {
     letter.photos.length > 0 ? letter.photos[order % letter.photos.length] : undefined;
 
   let cardOrder = 0;
+
+  if (!opened) {
+    return (
+      <SealedEnvelope
+        letterId={letter.id}
+        recipientName={letter.recipientName}
+        onDone={() => setOpened(true)}
+      />
+    );
+  }
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-[#F4F4F6] bg-gradient-to-b from-[#F4F4F6] to-[#EDEDF1] sm:py-6">

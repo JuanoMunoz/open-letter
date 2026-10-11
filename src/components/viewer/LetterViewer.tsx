@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Moon, Sun } from "lucide-react";
 import { BlurBackground } from "./BlurBackground";
 import { Particles } from "./Particles";
 import { DotNav } from "./DotNav";
@@ -19,7 +20,7 @@ import {
 import { formatExpiry } from "@/lib/dates";
 import type { LetterView, SectionKind } from "./types";
 
-export function LetterViewer({ letter }: { letter: LetterView }) {
+export function LetterViewer({ letter, preview = false, scrollSignal = null }: { letter: LetterView; preview?: boolean; scrollSignal?: { key: string; n: number } | null }) {
   const template = useMemo(() => getTemplate(letter.templateId), [letter.templateId]);
   const theme = useMemo(() => resolveTheme(template, letter.theme), [template, letter.theme]);
   // Secciones guardadas (por key) cruzadas con la plantilla (títulos/iconos).
@@ -44,7 +45,7 @@ export function LetterViewer({ letter }: { letter: LetterView }) {
       { kind: "cover", key: "cover", label: "Portada" },
       { kind: "message", key: "message", label: template.sections[0]?.label ?? "Mensaje" },
     ];
-    cardDefs.forEach(({ key, def, body }) => {
+    cardDefs.forEach(({ key, def }) => {
       list.push({ kind: "card", key, label: def.viewerTitle });
     });
     letter.photos.forEach((_, i) =>
@@ -56,11 +57,15 @@ export function LetterViewer({ letter }: { letter: LetterView }) {
   }, [letter, template, cardDefs]);
 
   const [active, setActive] = useState(0);
-  // Ritual de apertura: sobre sellado 3D (se omite con reduced-motion).
+  // Modo noche: valor guardado + interruptor propio para quien lee.
+  const [night, setNight] = useState(!!letter.theme?.nightMode);
+  const bgLiso = letter.theme?.background === "liso";
+  // Ritual de apertura: sobre sellado 3D (se omite con reduced-motion y en preview).
   const [opened, setOpened] = useState(
     () =>
-      typeof window !== "undefined" &&
-      !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches,
+      preview ||
+      (typeof window !== "undefined" &&
+        !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches),
   );
   const scrollRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Array<HTMLDivElement | null>>([]);
@@ -97,6 +102,15 @@ export function LetterViewer({ letter }: { letter: LetterView }) {
   const goTo = (i: number) => {
     sectionRefs.current[i]?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
+
+  // Señal externa (preview en vivo): salta a la sección con esta key.
+  const lastSignal = useRef(0);
+  useEffect(() => {
+    if (!scrollSignal || scrollSignal.n === lastSignal.current) return;
+    lastSignal.current = scrollSignal.n;
+    const i = sections.findIndex((s) => s.key === scrollSignal.key);
+    if (i >= 0) sectionRefs.current[i]?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [scrollSignal, sectionRefs, sections]);
 
   // Teclado: ↑ ↓, PageUp/PageDown, espacio.
   useEffect(() => {
@@ -142,9 +156,26 @@ export function LetterViewer({ letter }: { letter: LetterView }) {
       style={{ background: `linear-gradient(180deg, var(--bg0) 0%, var(--bg1) 100%)`, ...themeVars(theme) }}
     >
       {/* Marco de teléfono en escritorio; pantalla completa en móvil */}
-      <div className="relative h-[100dvh] w-full overflow-hidden bg-white sm:h-[min(92vh,900px)] sm:w-auto sm:aspect-[9/19] sm:rounded-[36px] sm:border sm:border-white/60 sm:shadow-[0_30px_80px_rgba(0,0,0,.12)]">
-        <BlurBackground photoUrl={activePhotoUrl} clear={isPhotoSection} />
+      <div className={`relative h-[100dvh] w-full overflow-hidden bg-white sm:h-[min(92vh,900px)] sm:w-auto sm:aspect-[9/19] sm:rounded-[36px] sm:border sm:border-white/60 sm:shadow-[0_30px_80px_rgba(0,0,0,.12)] ${night ? "night-frame" : ""}`}>
+        {bgLiso ? (
+          <div
+            aria-hidden
+            className="absolute inset-0"
+            style={night ? { background: "linear-gradient(180deg,#17181d,#101218)" } : { background: "linear-gradient(180deg, var(--bg0), var(--bg1))" }}
+          />
+        ) : (
+          <BlurBackground photoUrl={activePhotoUrl} clear={isPhotoSection} />
+        )}
         <Particles kind={(letter.theme?.particles as ParticleKind | undefined) ?? template.particles} color={theme.brand} />
+        <button
+          type="button"
+          onClick={() => setNight((v) => !v)}
+          aria-pressed={night}
+          aria-label={night ? "Desactivar modo noche" : "Activar modo noche"}
+          className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-black/25 text-white backdrop-blur transition hover:bg-black/40"
+        >
+          {night ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
 
         <div ref={scrollRef} className="snap-frame relative z-10 h-full w-full overflow-y-auto">
           {sections.map((s, i) => (

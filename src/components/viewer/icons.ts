@@ -1,4 +1,5 @@
 import {
+  BadgeCheck,
   BookOpen,
   Cake,
   Gift,
@@ -7,24 +8,31 @@ import {
   HeartHandshake,
   Laugh,
   Lightbulb,
+  ListOrdered,
+  MailOpen,
   Quote,
   Rocket,
   Sparkles,
   Star,
   Sunrise,
+  GripVertical,
   type LucideIcon,
 } from "lucide-react";
 
 /** Registro central: los decks referencian iconos por nombre. */
 export const SECTION_ICONS: Record<string, LucideIcon> = {
+  BadgeCheck,
   BookOpen,
   Cake,
   Gift,
+  GripVertical,
   Heart,
   HeartCrack,
   HeartHandshake,
   Laugh,
   Lightbulb,
+  ListOrdered,
+  MailOpen,
   Quote,
   Rocket,
   Sparkles,

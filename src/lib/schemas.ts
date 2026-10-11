@@ -31,6 +31,12 @@ export const sectionItemSchema = z.object({
   icon: z.string().max(32).optional().default("Sparkles"),
   body: z.string().max(1200).optional().default(""),
   items: z.array(z.string().max(140)).max(20).optional().default([]),
+  /** Pares condición→texto para "Ábrela cuando…" (máx. 5). */
+  pairs: z
+    .array(z.object({ when: z.string().max(80), text: z.string().max(280) }))
+    .max(5)
+    .optional()
+    .default([]),
   enabled: z.boolean().optional().default(true),
   order: z.number().int().min(0).max(30).optional().default(0),
 });

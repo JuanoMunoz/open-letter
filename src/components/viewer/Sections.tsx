@@ -97,7 +97,7 @@ export function SectionMessage({ letter, active }: { letter: LetterView; active:
         <p className="font-letter text-[18px] italic text-neutral-500">{formatLongDate(letter.specialDate)}</p>
       )}
       <p
-        className="font-letter mt-2 flex-1 overflow-hidden text-[24px] leading-[1.55] text-[#2b2b33]"
+        className="font-letter night-ink mt-2 flex-1 overflow-hidden text-[24px] leading-[1.55] text-[#2b2b33]"
         aria-label={letter.mainMessage}
         onClick={() => !done && complete()}
       >
@@ -149,7 +149,7 @@ export function SectionCard({
         whileInView={{ scale: 1, opacity: 1, y: 0 }}
         viewport={{ amount: 0.5 }}
         transition={{ type: "spring", stiffness: 260, damping: 24 }}
-        className="relative max-h-[82%] w-[86%] overflow-y-auto rounded-[28px] p-5 shadow-[0_10px_40px_rgba(214,69,127,.10)] backdrop-blur-xl sm:p-6"
+        className="night-card relative max-h-[82%] w-[86%] overflow-y-auto rounded-[28px] p-5 shadow-[0_10px_40px_rgba(214,69,127,.10)] backdrop-blur-xl sm:p-6"
         style={{ background: "color-mix(in srgb, #ffffff 88%, transparent)" }}
       >
         <button
@@ -253,7 +253,7 @@ export function SectionChapter({ letter, template, active }: { letter: LetterVie
         whileInView={{ scale: 1, opacity: 1, y: 0 }}
         viewport={{ amount: 0.5 }}
         transition={{ type: "spring", stiffness: 260, damping: 24 }}
-        className="w-[86%] rounded-[28px] bg-[rgba(255,255,255,.88)] p-5 text-center shadow-[0_10px_40px_rgba(214,69,127,.10)] backdrop-blur-xl"
+        className="night-card w-[86%] rounded-[28px] bg-[rgba(255,255,255,.88)] p-5 text-center shadow-[0_10px_40px_rgba(214,69,127,.10)] backdrop-blur-xl"
       >
         <div className="mb-1 flex items-center justify-center gap-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}>
@@ -296,7 +296,7 @@ export function SectionSong({ letter, template, active }: { letter: LetterView; 
   void active;
   return (
     <div ref={ref} className="flex h-full items-center justify-center px-6">
-      <div className="w-[86%] rounded-[28px] bg-[rgba(255,255,255,.88)] p-5 shadow-[0_10px_40px_rgba(214,69,127,.10)] backdrop-blur-xl">
+      <div className="night-card w-[86%] rounded-[28px] bg-[rgba(255,255,255,.88)] p-5 shadow-[0_10px_40px_rgba(214,69,127,.10)] backdrop-blur-xl">
         <div className="mb-3 flex items-center gap-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}>
             <Music2 size={18} />

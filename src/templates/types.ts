@@ -63,6 +63,8 @@ export interface SectionItem {
   body: string;
   /** Ítems para listas (razones, promesas, ábrela-cuándo). */
   items?: string[];
+  /** Pares condición→texto para "Ábrela cuando…". */
+  pairs?: Array<{ when: string; text: string }>;
   enabled: boolean;
   order: number;
 }

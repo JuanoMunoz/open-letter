@@ -24,6 +24,7 @@ export function BlurBackground({ photoUrl, clear }: { photoUrl?: string; clear: 
             />
           </motion.div>
           <div
+            data-bg-overlay
             className="absolute inset-0 bg-white transition-opacity duration-700"
             style={{ opacity: clear ? 0.15 : 0.78 }}
           />

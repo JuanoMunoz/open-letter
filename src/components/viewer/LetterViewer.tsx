@@ -5,6 +5,8 @@ import { BlurBackground } from "./BlurBackground";
 import { Particles } from "./Particles";
 import { DotNav } from "./DotNav";
 import { SealedEnvelope } from "./SealedEnvelope";
+import { BrandMark } from "@/components/BrandMark";
+import { getTemplate, themeVars, scriptFamily } from "@/templates";
 import {
   SectionCover,
   SectionMessage,
@@ -17,21 +19,32 @@ import { formatExpiry } from "@/lib/dates";
 import type { LetterView, SectionKind } from "./types";
 
 export function LetterViewer({ letter }: { letter: LetterView }) {
+  const template = useMemo(() => getTemplate(letter.templateId), [letter.templateId]);
+  // Columnas posicionales → defs de la plantilla (Fase B lo lleva a `sections` jsonb).
+  const bodies = useMemo(
+    () => [letter.loveText, letter.storyText, letter.dreamsText],
+    [letter.loveText, letter.storyText, letter.dreamsText],
+  );
+  const cardDefs = useMemo(
+    () =>
+      template.sections.slice(1).map((def, i) => ({ def, body: bodies[i] ?? null })),
+    [template, bodies],
+  );
   const sections: SectionKind[] = useMemo(() => {
     const list: SectionKind[] = [
       { kind: "cover", key: "cover", label: "Portada" },
-      { kind: "message", key: "message", label: "Mensaje" },
+      { kind: "message", key: "message", label: template.sections[0]?.label ?? "Mensaje" },
     ];
-    if (letter.loveText) list.push({ kind: "card", key: "love", label: "Lo que más amo de ti", field: "loveText" });
-    if (letter.storyText) list.push({ kind: "card", key: "story", label: "Nuestra historia", field: "storyText" });
-    if (letter.dreamsText) list.push({ kind: "card", key: "dreams", label: "Sueños juntos", field: "dreamsText" });
+    cardDefs.forEach(({ def, body }) => {
+      if (body) list.push({ kind: "card", key: def.key, label: def.viewerTitle });
+    });
     letter.photos.forEach((_, i) =>
       list.push({ kind: "photo", key: `photo-${i}`, label: `Foto ${i + 1}`, index: i }),
     );
-    if (letter.specialDate) list.push({ kind: "chapter", key: "chapter", label: "Nuestro capítulo" });
-    if (letter.spotifyTrackId) list.push({ kind: "song", key: "song", label: "Nuestra canción" });
+    if (letter.specialDate) list.push({ kind: "chapter", key: "chapter", label: template.dateSectionTitle });
+    if (letter.spotifyTrackId) list.push({ kind: "song", key: "song", label: template.songTitle });
     return list;
-  }, [letter]);
+  }, [letter, template, cardDefs]);
 
   const [active, setActive] = useState(0);
   // Ritual de apertura: sobre sellado 3D (se omite con reduced-motion).
@@ -96,22 +109,33 @@ export function LetterViewer({ letter }: { letter: LetterView }) {
 
   let cardOrder = 0;
 
-  if (!opened) {
+  if (!opened && template.opening !== "ninguna") {
     return (
       <SealedEnvelope
         letterId={letter.id}
         recipientName={letter.recipientName}
+        invite={template.openingInvite}
+        tapLabel={(t, n) => template.tapCounter(t, n)}
+        brand={template.theme.brand}
+        brandSoft={template.theme.brandSoft}
+        paper={template.theme.paper}
+        scriptFont={scriptFamily(template.theme.font)}
         onDone={() => setOpened(true)}
       />
     );
   }
 
+  const cardByKey = (key: string) => cardDefs.find((c) => c.def.key === key);
+
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-[#F4F4F6] bg-gradient-to-b from-[#F4F4F6] to-[#EDEDF1] sm:py-6">
+    <div
+      className="flex min-h-dvh items-center justify-center sm:py-6"
+      style={{ background: `linear-gradient(180deg, var(--bg0) 0%, var(--bg1) 100%)`, ...themeVars(template.theme) }}
+    >
       {/* Marco de teléfono en escritorio; pantalla completa en móvil */}
       <div className="relative h-[100dvh] w-full overflow-hidden bg-white sm:h-[min(92vh,900px)] sm:w-auto sm:aspect-[9/19] sm:rounded-[36px] sm:border sm:border-white/60 sm:shadow-[0_30px_80px_rgba(0,0,0,.12)]">
         <BlurBackground photoUrl={activePhotoUrl} clear={isPhotoSection} />
-        <Particles />
+        <Particles kind={template.particles} color={template.theme.brand} />
 
         <div ref={scrollRef} className="snap-frame relative z-10 h-full w-full overflow-y-auto">
           {sections.map((s, i) => (
@@ -123,31 +147,39 @@ export function LetterViewer({ letter }: { letter: LetterView }) {
               data-index={i}
               className="snap-section relative h-full w-full"
             >
-              {s.kind === "cover" && <SectionCover letter={letter} />}
+              {s.kind === "cover" && <SectionCover letter={letter} template={template} />}
               {s.kind === "message" && <SectionMessage letter={letter} active={seenActive.has(i)} />}
-              {s.kind === "card" && (
-                <SectionCard
-                  letter={letter}
-                  field={s.field}
-                  active={seenActive.has(i)}
-                  polaroid={cardPhoto(cardOrder++)}
-                />
-              )}
+              {s.kind === "card" && (() => {
+                const found = cardByKey(s.key);
+                if (!found?.body) return null;
+                return (
+                  <SectionCard
+                    def={found.def}
+                    body={found.body}
+                    active={seenActive.has(i)}
+                    polaroid={cardPhoto(cardOrder++)}
+                  />
+                );
+              })()}
               {s.kind === "photo" && <SectionPhoto photo={letter.photos[s.index]} />}
               {s.kind === "chapter" && letter.specialDate && (
-                <SectionChapter letter={letter} active={seenActive.has(i)} />
+                <SectionChapter letter={letter} template={template} active={seenActive.has(i)} />
               )}
               {s.kind === "song" && letter.spotifyTrackId && (
-                <SectionSong letter={letter} active={seenActive.has(i)} />
+                <SectionSong letter={letter} template={template} active={seenActive.has(i)} />
               )}
             </div>
           ))}
 
           {/* Pie global */}
-          <div className="snap-section flex h-full items-center justify-center">
-            <p className="px-8 text-center text-[11px] text-neutral-500/80">
-              Disponible hasta {formatExpiry(letter.expiresAt)} · Hecho con openletter
+          <div className="snap-section flex h-full flex-col items-center justify-center gap-2">
+            <p className="font-letter text-[24px]" style={{ color: "var(--brand)" }}>
+              {template.closingLine}
             </p>
+            <p className="px-8 text-center text-[11px] text-neutral-500/80">
+              Disponible hasta {formatExpiry(letter.expiresAt)} · {template.footerSuffix}
+            </p>
+            <BrandMark />
           </div>
         </div>
 

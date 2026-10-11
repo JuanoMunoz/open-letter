@@ -26,19 +26,6 @@ function roundedRect(w: number, h: number, r: number): THREE.Shape {
   return s;
 }
 
-/** Corazón clásico (curvas de la doc de three.js), centrado en el origen. */
-function heartShape(): THREE.Shape {
-  const s = new THREE.Shape();
-  s.moveTo(5, 5);
-  s.bezierCurveTo(5, 5, 4, 0, 0, 0);
-  s.bezierCurveTo(-6, 0, -6, 7, -6, 7);
-  s.bezierCurveTo(-6, 11, -3, 15.4, 5, 19);
-  s.bezierCurveTo(12, 15.4, 16, 11, 16, 7);
-  s.bezierCurveTo(16, 7, 16, 0, 10, 0);
-  s.bezierCurveTo(7, 0, 5, 5, 5, 5);
-  return s;
-}
-
 function extrudeCentered(
   shape: THREE.Shape,
   depth: number,
@@ -57,26 +44,64 @@ function extrudeCentered(
   return geo;
 }
 
-function makeCardTexture(name: string): THREE.CanvasTexture {
+function makeCardTexture(name: string, brand: string, font: string): THREE.CanvasTexture {
   const canvas = document.createElement("canvas");
   canvas.width = 512;
   canvas.height = 288;
   const ctx = canvas.getContext("2d")!;
-  ctx.fillStyle = "#FFF9FB";
+  ctx.fillStyle = "#FFFDFE";
   ctx.fillRect(0, 0, 512, 288);
-  ctx.strokeStyle = "#F3C6D6";
+  ctx.strokeStyle = "#E9D9C6";
   ctx.lineWidth = 6;
   ctx.strokeRect(14, 14, 484, 260);
   ctx.textAlign = "center";
-  ctx.fillStyle = "#8a8a95";
-  ctx.font = "600 26px Inter, sans-serif";
-  ctx.fillText("P A R A", 256, 84);
-  ctx.fillStyle = "#D6457F";
-  ctx.font = "700 72px Caveat, cursive";
+  ctx.fillStyle = brand;
+  ctx.font = `600 84px "${font}", cursive`;
   const short = name.length > 14 ? name.slice(0, 14) + "…" : name;
-  ctx.fillText(short, 256, 172);
-  ctx.font = "48px serif";
-  ctx.fillText("♥", 256, 236);
+  ctx.fillText(short, 256, 168);
+  ctx.font = "44px serif";
+  ctx.fillText("♥", 256, 232);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
+}
+
+/** Sello circular con el icono de openletter (sobre + corazón), estilo icon.svg. */
+function makeSealTexture(brand: string): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = brand;
+  ctx.fillRect(0, 0, 256, 256);
+  // Sobre blanco simplificado
+  ctx.fillStyle = "#ffffff";
+  const x = 58, y = 96, w = 140, h = 88, r = 14;
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, r);
+  ctx.fill();
+  // Solapa del sobre
+  ctx.strokeStyle = brand;
+  ctx.lineWidth = 10;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  ctx.moveTo(x + 12, y + 16);
+  ctx.lineTo(128, y + 58);
+  ctx.lineTo(x + w - 12, y + 16);
+  ctx.stroke();
+  // Corazón central
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.moveTo(128, 196);
+  ctx.bezierCurveTo(128, 188, 106, 176, 106, 162);
+  ctx.bezierCurveTo(106, 152, 114, 146, 121, 146);
+  ctx.bezierCurveTo(124, 146, 127, 148, 128, 151);
+  ctx.bezierCurveTo(129, 148, 132, 146, 135, 146);
+  ctx.bezierCurveTo(142, 146, 150, 152, 150, 162);
+  ctx.bezierCurveTo(150, 176, 128, 188, 128, 196);
+  ctx.fill();
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
@@ -102,17 +127,29 @@ function makeShadowTexture(): THREE.CanvasTexture {
 }
 
 /**
- * Sobre sellado 3D (mobile-first, centrado): cada tap/clic abre un poco más
- * la solapa hasta completar los toques requeridos; el lacre de cera en forma
- * de corazón se rompe al inicio y la carta sale al final.
+ * Sobre de papel crema con cinta y sello openletter (mobile-first, centrado):
+ * cada tap/clic abre un poco más la solapa; el sello se rompe al inicio,
+ * la carta pasa al frente y el sobre se desvanece.
  */
 export function SealedEnvelope({
   letterId,
   recipientName,
+  invite,
+  tapLabel,
+  brand,
+  brandSoft,
+  paper,
+  scriptFont,
   onDone,
 }: {
   letterId: string;
   recipientName: string;
+  invite: string;
+  tapLabel: (taps: number, needed: number) => string;
+  brand: string;
+  brandSoft: string;
+  paper: string;
+  scriptFont: string;
   onDone: () => void;
 }) {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -168,7 +205,7 @@ export function SealedEnvelope({
     const env = new THREE.Group();
     group.add(env);
 
-    const paper = (color: string, extra?: Partial<THREE.MeshPhysicalMaterialParameters>) =>
+    const paperMat = (color: string, extra?: Partial<THREE.MeshPhysicalMaterialParameters>) =>
       new THREE.MeshPhysicalMaterial({
         color,
         roughness: 0.75,
@@ -178,12 +215,12 @@ export function SealedEnvelope({
         ...extra,
       });
 
-    // Cuerpo con bordes redondeados y relieve (bisel)
-    const body = new THREE.Mesh(extrudeCentered(roundedRect(3.2, 2.15, 0.14), 0.1, 0.03), paper("#ffffff"));
+    // Cuerpo de papel crema con bordes redondeados y relieve (bisel)
+    const body = new THREE.Mesh(extrudeCentered(roundedRect(3.2, 2.15, 0.14), 0.1, 0.03), paperMat(paper));
     env.add(body);
 
     // Solapas laterales (triángulos clásicos del sobre)
-    const sideMat = paper("#F6D3E0", { side: THREE.DoubleSide });
+    const sideMat = paperMat(brandSoft, { side: THREE.DoubleSide });
     const leftShape = new THREE.Shape();
     leftShape.moveTo(-1.6, -1.075);
     leftShape.lineTo(-1.6, 0.42);
@@ -196,51 +233,59 @@ export function SealedEnvelope({
     env.add(leftFlap, rightFlap);
 
     // Bolsillo inferior frontal
-    const pocket = new THREE.Mesh(extrudeCentered(roundedRect(3.2, 1.28, 0.1), 0.05, 0.02), paper("#FBE4EC"));
+    const pocket = new THREE.Mesh(extrudeCentered(roundedRect(3.2, 1.28, 0.1), 0.05, 0.02), paperMat(paper));
     pocket.position.set(0, -0.44, 0.06);
     env.add(pocket);
+
+    // Cinta fina vertical sobre el bolsillo
+    const ribbonMat = paperMat(brand, { roughness: 0.55 });
+    const ribbonV = new THREE.Mesh(new THREE.BoxGeometry(0.26, 1.3, 0.03), ribbonMat);
+    ribbonV.position.set(0, -0.44, 0.1);
+    env.add(ribbonV);
 
     // Solapa superior con bisagra en el borde de arriba
     const flapGeo = extrudeCentered(roundedRect(3.2, 1.32, 0.1), 0.04, 0.02);
     flapGeo.translate(0, -0.66, 0);
     const flap = new THREE.Mesh(
       flapGeo,
-      paper("#F3C9D8", { side: THREE.DoubleSide }),
+      paperMat(brandSoft, { side: THREE.DoubleSide }),
     );
     flap.position.set(0, 1.075, 0.09);
     env.add(flap);
 
-    // Lacre de cera en forma de corazón con relieve, al centro
-    const heartGeo = new THREE.ExtrudeGeometry(heartShape(), {
-      depth: 0.06,
-      bevelEnabled: true,
-      bevelThickness: 0.03,
-      bevelSize: 0.03,
-      bevelSegments: 3,
-      curveSegments: 24,
+    // Cinta fina sobre la solapa (continúa la vertical; coords locales: bisagra en 0,0)
+    const ribbonFlap = new THREE.Mesh(new THREE.BoxGeometry(0.26, 1.3, 0.03), ribbonMat);
+    ribbonFlap.geometry.translate(0, -0.65, 0);
+    ribbonFlap.position.set(0, 0, 0.03);
+    flap.add(ribbonFlap);
+
+    // Sello circular con el icono de openletter, al centro
+    const sealTex = makeSealTexture(brand);
+    const sealSide = new THREE.MeshPhysicalMaterial({
+      color: brand,
+      roughness: 0.35,
+      clearcoat: 0.8,
+      clearcoatRoughness: 0.4,
     });
-    heartGeo.center();
-    const wax = new THREE.Mesh(
-      heartGeo,
-      new THREE.MeshPhysicalMaterial({
-        color: "#C2244F",
-        roughness: 0.32,
-        metalness: 0,
-        clearcoat: 0.9,
-        clearcoatRoughness: 0.35,
-      }),
-    );
-    wax.scale.setScalar(0.024);
-    const seal = new THREE.Group();
-    seal.add(wax);
-    seal.position.set(0, -0.14, 0.17);
-    seal.rotation.z = Math.PI; // punta del corazón hacia abajo
+    const sealTop = new THREE.MeshPhysicalMaterial({
+      map: sealTex,
+      roughness: 0.35,
+      clearcoat: 0.8,
+      clearcoatRoughness: 0.4,
+    });
+    const seal = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.32, 0.09, 48), [
+      sealSide,
+      sealTop,
+      sealSide,
+    ]);
+    seal.rotation.x = Math.PI / 2; // cara con icono hacia la cámara
+    seal.position.set(0, -0.14, 0.18);
     env.add(seal);
 
     // Carta interior: base con relieve + cara con el nombre
-    const cardTex = makeCardTexture(recipientName);
+    const cardTex = makeCardTexture(recipientName, brand, scriptFont);
     const cardGroup = new THREE.Group();
-    const cardBase = new THREE.Mesh(extrudeCentered(roundedRect(2.6, 1.5, 0.09), 0.03, 0.015), paper("#FFFDFE"));
+    const cardBase = new THREE.Mesh(extrudeCentered(roundedRect(2.6, 1.5, 0.09), 0.03, 0.015), paperMat("#FFFDFE"));
     const cardFace = new THREE.Mesh(
       new THREE.PlaneGeometry(2.5, 1.41),
       new THREE.MeshStandardMaterial({ map: cardTex, roughness: 0.9 }),
@@ -347,15 +392,15 @@ export function SealedEnvelope({
       mount.removeChild(renderer.domElement);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recipientName]);
+  }, [recipientName, brand, brandSoft, paper, scriptFont]);
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-gradient-to-b from-[#F4F4F6] to-[#EDEDF1] px-6">
+    <div className="flex min-h-dvh flex-col items-center justify-center px-6" style={{ background: `linear-gradient(180deg, var(--bg0, #F4F4F6) 0%, var(--bg1, #EDEDF1) 100%)` }}>
       <div
         ref={mountRef}
         role="button"
         tabIndex={0}
-        aria-label={`Sobre sellado para ${recipientName}. Tócalo ${needed} ${needed === 1 ? "vez" : "veces"} para abrirlo.`}
+        aria-label={`Sobre para ${recipientName}. ${invite}.`}
         onPointerDown={tap}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -370,7 +415,7 @@ export function SealedEnvelope({
         className="mt-2 text-center text-sm font-semibold text-[#6B6B76] transition-opacity duration-500"
         style={{ opacity: leaving ? 0 : 1 }}
       >
-        {taps === 0 ? <>Toca el sobre para abrirlo</> : <>{taps} / {needed}</>}
+        {taps === 0 ? invite : tapLabel(taps, needed)}
       </p>
       <div
         className="mt-3 flex gap-1.5 transition-opacity duration-500"
@@ -381,7 +426,7 @@ export function SealedEnvelope({
           <span
             key={i}
             className="h-2 w-2 rounded-full transition-colors"
-            style={{ background: i < taps ? "#D6457F" : "#E0E0E8" }}
+            style={{ background: i < taps ? brand : "#E0E0E8" }}
           />
         ))}
       </div>

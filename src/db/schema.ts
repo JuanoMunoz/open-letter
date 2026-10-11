@@ -16,6 +16,7 @@ export const letters = pgTable(
     spotifyTrackId: varchar("spotify_track_id", { length: 22 }),
     manageTokenHash: varchar("manage_token_hash", { length: 64 }).notNull(),
     ipHash: varchar("ip_hash", { length: 64 }).notNull(),
+    template: varchar("template", { length: 24 }).notNull().default("amor"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   },

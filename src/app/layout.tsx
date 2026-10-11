@@ -1,9 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Caveat } from "next/font/google";
+import { Inter, Caveat, Fraunces, Kalam, Dancing_Script } from "next/font/google";
 import "../styles/globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const caveat = Caveat({ subsets: ["latin"], variable: "--font-caveat", weight: ["500", "600", "700"], display: "swap" });
+const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-fraunces", weight: ["300", "400", "500"], style: ["normal", "italic"], display: "swap" });
+const kalam = Kalam({ subsets: ["latin"], variable: "--font-kalam", weight: ["300", "400", "700"], display: "swap" });
+const dancing = Dancing_Script({ subsets: ["latin"], variable: "--font-dancing", weight: ["500", "600", "700"], display: "swap" });
 
 export const metadata: Metadata = {
   title: "openletter — cartas digitales que duran una semana",
@@ -21,7 +24,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es" className={`${inter.variable} ${caveat.variable} h-full`}>
+      <html lang="es" className={`${inter.variable} ${caveat.variable} ${fraunces.variable} ${kalam.variable} ${dancing.variable} h-full`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

@@ -30,14 +30,14 @@ export function DotNav({
             style={{
               width: i === active ? 11 : 8,
               height: i === active ? 11 : 8,
-              background: i === active ? "#D6457F" : "#fff",
+              background: i === active ? "var(--brand)" : "#fff",
               boxShadow: "0 1px 4px rgba(0,0,0,.18)",
             }}
           >
             {i === active && (
               <span
                 className="absolute inset-0 animate-ping rounded-full"
-                style={{ background: "rgba(214,69,127,.35)" }}
+                style={{ background: "color-mix(in srgb, var(--brand) 35%, transparent)" }}
               />
             )}
           </span>

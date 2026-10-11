@@ -19,6 +19,39 @@ body {
   font-family: var(--font-caveat), "Segoe Script", cursive;
 }
 
+/* Script de la carta según la plantilla (inyectado vía --script-font) */
+.font-letter {
+  font-family: var(--script-font, var(--font-caveat)), "Segoe Script", cursive;
+}
+
+/* Fuentes editoriales y scripts por plantilla */
+.font-editorial {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+}
+.font-editorial em {
+  font-style: italic;
+  font-weight: 400;
+}
+.font-kalam {
+  font-family: var(--font-kalam), "Segoe Script", cursive;
+}
+.font-dancing {
+  font-family: var(--font-dancing), "Segoe Script", cursive;
+}
+
+/* Tokens de marca por plantilla (inyectados vía style desde themeVars) */
+:root {
+  --brand: #d6457f;
+  --brand-soft: #fbe4ec;
+  --paper: #fff9fb;
+  --ink: #3a3a44;
+  --bg0: #f4f4f6;
+  --bg1: #ededf1;
+  --script-font: var(--font-caveat);
+}
+
 /* Visor: snap vertical + scrollbar oculta */
 .snap-frame {
   scroll-snap-type: y mandatory;

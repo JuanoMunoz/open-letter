@@ -43,6 +43,9 @@ CREATE TABLE IF NOT EXISTS rate_events (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS rate_events_ip_kind_created_idx ON rate_events (ip_hash, kind, created_at);
+
+-- Fase A (plantillas): plantilla de cada carta. Default 'amor' para las existentes.
+ALTER TABLE letters ADD COLUMN IF NOT EXISTS template varchar(24) NOT NULL DEFAULT 'amor';
 `;
 
 /** Migración sin drizzle-kit: ejecuta el DDL idempotente contra la URL directa. */

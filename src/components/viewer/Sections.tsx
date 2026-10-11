@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, createElement } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
-import { Quote, Heart, BookOpen, Rocket, Sparkles, CalendarDays, MapPin, Music2, Maximize2 } from "lucide-react";
+import { Quote, CalendarDays, MapPin, Music2, Maximize2 } from "lucide-react";
+import { sectionIcon } from "./icons";
 import { TypewriterText, useTypewriter } from "./TypewriterText";
 import { ExpandModal } from "./ExpandModal";
-import { formatLongDate, daysTogetherText, daysTogetherCount } from "@/lib/dates";
+import { formatLongDate, daysTogetherCount } from "@/lib/dates";
 import { spotifyEmbedUrl } from "@/lib/spotify";
 import type { LetterView, ViewerPhoto } from "./types";
+import type { LetterTemplate, SectionDef } from "@/templates/types";
 
 /* ---------- Polaroid que asoma en la esquina superior izquierda ---------- */
 
@@ -32,9 +34,9 @@ export function PolaroidPeek({ photo }: { photo?: ViewerPhoto }) {
 
 /* ---------- 1. Portada ---------- */
 
-export function SectionCover({ letter }: { letter: LetterView }) {
+export function SectionCover({ letter, template }: { letter: LetterView; template: LetterTemplate }) {
   const lines = [
-    <h2 key="n" className="font-script text-[56px] font-bold leading-none text-[#D6457F] sm:text-[64px]">
+    <h2 key="n" className="font-letter text-[56px] font-bold leading-none sm:text-[64px]" style={{ color: "var(--brand)" }}>
       {letter.recipientName}
     </h2>,
     letter.specialDate ? (
@@ -44,17 +46,22 @@ export function SectionCover({ letter }: { letter: LetterView }) {
     ) : null,
     letter.senderName ? (
       <p key="c" className="mt-5 text-[13px] text-neutral-500">
-        Con todo mi amor,
+        {template.cover.greeting}
       </p>
     ) : null,
     letter.senderName ? (
-      <p key="s" className="font-script mt-1 text-[44px] font-semibold leading-tight text-[#D6457F]">
+      <p key="s" className="font-letter mt-1 text-[44px] font-semibold leading-tight" style={{ color: "var(--brand)" }}>
         {letter.senderName}
+      </p>
+    ) : null,
+    letter.senderName ? (
+      <p key="cl" className="mt-1 text-[13px] italic text-neutral-500">
+        {template.cover.closing}
       </p>
     ) : null,
     letter.nickname ? (
       <p key="a" className="mt-2 text-[13px] italic text-neutral-500">
-        mi {letter.nickname}
+        ({letter.nickname})
       </p>
     ) : null,
   ].filter(Boolean);
@@ -83,14 +90,14 @@ export function SectionMessage({ letter, active }: { letter: LetterView; active:
   const { shown, done, complete } = useTypewriter(letter.mainMessage, active);
   return (
     <div className="relative flex h-full flex-col px-8 pb-16 pt-20">
-      <span className="mb-2 flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#D6457F]/40 text-[#D6457F]">
+      <span className="mb-2 flex h-10 w-10 items-center justify-center rounded-full border-2" style={{ borderColor: "color-mix(in srgb, var(--brand) 40%, transparent)", color: "var(--brand)" }}>
         <Quote size={18} />
       </span>
       {letter.specialDate && (
-        <p className="font-script text-[18px] italic text-neutral-500">{formatLongDate(letter.specialDate)}</p>
+        <p className="font-letter text-[18px] italic text-neutral-500">{formatLongDate(letter.specialDate)}</p>
       )}
       <p
-        className="font-script mt-2 flex-1 overflow-hidden text-[24px] leading-[1.55] text-[#2b2b33]"
+        className="font-letter mt-2 flex-1 overflow-hidden text-[24px] leading-[1.55] text-[#2b2b33]"
         aria-label={letter.mainMessage}
         onClick={() => !done && complete()}
       >
@@ -99,7 +106,7 @@ export function SectionMessage({ letter, active }: { letter: LetterView; active:
       </p>
       <div className="flex items-end justify-between">
         {letter.senderName ? (
-          <p className="font-script text-[22px] text-neutral-600">— {letter.senderName}</p>
+          <p className="font-letter text-[22px] text-neutral-600">— {letter.senderName}</p>
         ) : (
           <span />
         )}
@@ -118,28 +125,22 @@ export function SectionMessage({ letter, active }: { letter: LetterView; active:
   );
 }
 
-/* ---------- 3-5. Tarjetas de texto ---------- */
-
-const CARD_META = {
-  loveText: { icon: Heart, title: "Lo que más amo de ti" },
-  storyText: { icon: BookOpen, title: "Nuestra historia" },
-  dreamsText: { icon: Rocket, title: "Sueños juntos" },
-} as const;
+/* ---------- Tarjetas de texto (definidas por la plantilla) ---------- */
 
 export function SectionCard({
-  letter,
-  field,
+  def,
+  body,
   active,
   polaroid,
 }: {
-  letter: LetterView;
-  field: keyof typeof CARD_META;
+  def: SectionDef;
+  body: string;
   active: boolean;
   polaroid?: ViewerPhoto;
 }) {
-  const text = letter[field] ?? "";
+  const text = body ?? "";
   const [open, setOpen] = useState(false);
-  const { icon: Icon, title } = CARD_META[field];
+  const title = def.viewerTitle;
   return (
     <div className="relative flex h-full items-center justify-center px-6">
       <PolaroidPeek photo={polaroid} />
@@ -148,7 +149,8 @@ export function SectionCard({
         whileInView={{ scale: 1, opacity: 1, y: 0 }}
         viewport={{ amount: 0.5 }}
         transition={{ type: "spring", stiffness: 260, damping: 24 }}
-        className="relative max-h-[82%] w-[86%] overflow-y-auto rounded-[28px] bg-[rgba(255,255,255,.88)] p-5 shadow-[0_10px_40px_rgba(214,69,127,.10)] backdrop-blur-xl sm:p-6"
+        className="relative max-h-[82%] w-[86%] overflow-y-auto rounded-[28px] p-5 shadow-[0_10px_40px_rgba(214,69,127,.10)] backdrop-blur-xl sm:p-6"
+        style={{ background: "color-mix(in srgb, #ffffff 88%, transparent)" }}
       >
         <button
           onClick={() => setOpen(true)}
@@ -157,14 +159,14 @@ export function SectionCard({
         >
           <Maximize2 size={13} />
         </button>
-        <span className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-[#FBE4EC] text-[#D6457F]">
-          <Icon size={18} />
+        <span className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}>
+          {createElement(sectionIcon(def.icon), { size: 18 })}
         </span>
-        <h3 className="font-script mb-2 text-center text-[30px] font-semibold text-neutral-900">{title}</h3>
+        <h3 className="font-letter mb-2 text-center text-[30px] font-semibold text-neutral-900">{title}</h3>
         <TypewriterText
           text={text}
           active={active}
-          className="font-script whitespace-pre-wrap text-[22px] leading-[1.5] text-[#3A3A44]"
+          className="font-letter whitespace-pre-wrap text-[22px] leading-[1.5] text-[#3A3A44]"
         />
       </motion.div>
       <AnimatePresence>
@@ -196,7 +198,7 @@ export function SectionPhoto({ photo }: { photo: ViewerPhoto }) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ amount: 0.6 }}
               transition={{ delay: 0.3, duration: 0.4 }}
-              className="font-script text-[24px] leading-snug text-neutral-900"
+              className="font-letter text-[24px] leading-snug text-neutral-900"
             >
               {photo.caption}
             </motion.p>
@@ -240,9 +242,10 @@ function useCountUp(target: number, active: boolean, duration = 1200) {
   return n;
 }
 
-export function SectionChapter({ letter, active }: { letter: LetterView; active: boolean }) {
+export function SectionChapter({ letter, template, active }: { letter: LetterView; template: LetterTemplate; active: boolean }) {
   const target = daysTogetherCount(letter.specialDate!, new Date());
   const n = useCountUp(Math.abs(target), active);
+  const line = target === 0 ? template.todayLine : target > 0 ? template.daysTogether(n) : template.daysMissing(n);
   return (
     <div className="flex h-full items-center justify-center px-6">
       <motion.div
@@ -253,26 +256,25 @@ export function SectionChapter({ letter, active }: { letter: LetterView; active:
         className="w-[86%] rounded-[28px] bg-[rgba(255,255,255,.88)] p-5 text-center shadow-[0_10px_40px_rgba(214,69,127,.10)] backdrop-blur-xl"
       >
         <div className="mb-1 flex items-center justify-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FBE4EC] text-[#D6457F]">
-            <Sparkles size={18} />
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}>
+            <CalendarDays size={18} />
           </span>
-          <h3 className="font-script text-[30px] font-semibold text-neutral-900">Nuestro Capítulo</h3>
+          <h3 className="font-letter text-[30px] font-semibold text-neutral-900">{template.dateSectionTitle}</h3>
         </div>
         <div className="mt-2 flex items-center justify-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FBE4EC] text-[#D6457F]">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}>
             <CalendarDays size={16} />
           </span>
           <div className="text-left">
-            <p className="text-[13px] italic text-neutral-500">Fecha especial</p>
-            <p className="font-script text-[28px] font-semibold leading-tight text-neutral-900">
+            <p className="font-letter text-[28px] font-semibold leading-tight text-neutral-900">
               {formatLongDate(letter.specialDate!)}
             </p>
           </div>
         </div>
-        <p className="mt-2 text-sm font-bold text-[#D6457F]" aria-live="polite">
-          {target === 0 ? "¡Hoy es el día!" : target > 0 ? `${n} días juntos` : `Faltan ${n} días`}
+        <p className="mt-2 text-sm font-bold" style={{ color: "var(--brand)" }} aria-live="polite">
+          {line}
         </p>
-        <span className="sr-only">{daysTogetherText(letter.specialDate!, new Date())}</span>
+        <span className="sr-only">{line}</span>
       </motion.div>
     </div>
   );
@@ -280,7 +282,7 @@ export function SectionChapter({ letter, active }: { letter: LetterView; active:
 
 /* ---------- 8. Nuestra Canción ---------- */
 
-export function SectionSong({ letter, active }: { letter: LetterView; active: boolean }) {
+export function SectionSong({ letter, template, active }: { letter: LetterView; template: LetterTemplate; active: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
@@ -296,10 +298,10 @@ export function SectionSong({ letter, active }: { letter: LetterView; active: bo
     <div ref={ref} className="flex h-full items-center justify-center px-6">
       <div className="w-[86%] rounded-[28px] bg-[rgba(255,255,255,.88)] p-5 shadow-[0_10px_40px_rgba(214,69,127,.10)] backdrop-blur-xl">
         <div className="mb-3 flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FBE4EC] text-[#D6457F]">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}>
             <Music2 size={18} />
           </span>
-          <h3 className="font-script text-[30px] font-semibold text-neutral-900">Nuestra Canción</h3>
+          <h3 className="font-letter text-[30px] font-semibold text-neutral-900">{template.songTitle}</h3>
           <button
             onClick={() => setOpen(true)}
             aria-label="Ampliar canción"

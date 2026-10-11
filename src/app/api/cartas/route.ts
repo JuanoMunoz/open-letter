@@ -78,6 +78,7 @@ export async function POST(req: NextRequest) {
       storyText: norm(data.storyText),
       dreamsText: norm(data.dreamsText),
       spotifyTrackId: data.spotifyTrackId ?? null,
+      template: data.templateId,
       manageTokenHash,
       ipHash,
       expiresAt,

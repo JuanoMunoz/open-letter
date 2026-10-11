@@ -27,6 +27,7 @@ function toView(
 ): LetterView {
   return {
     id: row.id,
+    templateId: row.template ?? "amor",
     recipientName: row.recipientName,
     nickname: row.nickname,
     specialDate: row.specialDate,

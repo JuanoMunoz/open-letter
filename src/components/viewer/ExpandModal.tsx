@@ -57,7 +57,7 @@ export function ExpandModal({ title, text, onClose }: { title: string; text: str
         className="max-h-[80%] w-[86%] overflow-y-auto rounded-[28px] bg-white/95 p-6 shadow-[0_10px_40px_rgba(214,69,127,.15)]"
       >
         <div className="mb-2 flex items-center justify-between">
-          <h3 className="font-script text-[28px] font-semibold text-neutral-900">{title}</h3>
+          <h3 className="font-letter text-[28px] font-semibold text-neutral-900">{title}</h3>
           <button
             ref={closeRef}
             onClick={onClose}
@@ -67,7 +67,7 @@ export function ExpandModal({ title, text, onClose }: { title: string; text: str
             <X size={16} />
           </button>
         </div>
-        <p className="font-script whitespace-pre-wrap text-[22px] leading-[1.5] text-[#3A3A44]">{text}</p>
+        <p className="font-letter whitespace-pre-wrap text-[22px] leading-[1.5] text-[#3A3A44]">{text}</p>
       </motion.div>
     </motion.div>
   );

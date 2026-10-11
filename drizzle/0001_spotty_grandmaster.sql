@@ -1,0 +1,1 @@
+ALTER TABLE "letters" ADD COLUMN "template" varchar(24) DEFAULT 'amor' NOT NULL;

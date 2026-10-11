@@ -11,7 +11,17 @@ export const photoInputSchema = z.object({
   place: z.string().max(120).optional().default(""),
 });
 
+export const templateIdSchema = z.enum([
+  "amor",
+  "aniversario",
+  "cumpleanos",
+  "amistad",
+  "gracias",
+  "perdon",
+]);
+
 export const createLetterSchema = z.object({
+  templateId: templateIdSchema.optional().default("amor"),
   recipientName: z.string().trim().min(1, "El nombre es obligatorio").max(150),
   nickname: z.string().trim().max(150).optional().default(""),
   specialDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),

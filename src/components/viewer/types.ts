@@ -7,6 +7,7 @@ export interface ViewerPhoto {
 
 export interface LetterView {
   id: string;
+  templateId: string;
   recipientName: string;
   nickname: string | null;
   specialDate: string | null;
@@ -23,7 +24,7 @@ export interface LetterView {
 export type SectionKind =
   | { kind: "cover"; key: string; label: string }
   | { kind: "message"; key: string; label: string }
-  | { kind: "card"; key: string; label: string; field: "loveText" | "storyText" | "dreamsText" }
+  | { kind: "card"; key: string; label: string }
   | { kind: "photo"; key: string; label: string; index: number }
   | { kind: "chapter"; key: string; label: string }
   | { kind: "song"; key: string; label: string };

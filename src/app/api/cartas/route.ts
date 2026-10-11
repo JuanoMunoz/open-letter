@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { eq } from "drizzle-orm";
 import { getDb, clientIp } from "@/db";
 import { letters, assets } from "@/db/schema";
 import { createLetterSchema } from "@/lib/schemas";
@@ -154,6 +155,19 @@ export async function POST(req: NextRequest) {
       await dbAny.batch(stmts);
     } else {
       for (const s of stmts) await s;
+    }
+    // Resuelve assetKey → assetId en el timeline (mismas filas recién creadas).
+    const withPhoto = (data.timeline ?? []).filter((m) => m.assetKey);
+    if (withPhoto.length > 0) {
+      const created = await db.select().from(assets).where(eq(assets.letterId, id));
+      const byKey = new Map(created.map((a) => [a.utKey, a.id]));
+      const resolved = (data.timeline ?? []).map((m) => ({
+        date: m.date ?? null,
+        title: m.title,
+        body: m.body ?? "",
+        assetId: (m.assetKey && byKey.get(m.assetKey)) || null,
+      }));
+      await db.update(letters).set({ timeline: resolved }).where(eq(letters.id, id));
     }
     await recordEvent(ipHash, "create");
   } catch (e) {

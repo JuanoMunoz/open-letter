@@ -46,6 +46,8 @@ export const timelineItemSchema = z.object({
   title: z.string().trim().min(1).max(60),
   body: z.string().trim().max(200).optional().default(""),
   assetId: z.string().uuid().optional().nullable(),
+  /** ut_key temporal del wizard (se resuelve a assetId al crear). */
+  assetKey: z.string().max(512).optional().nullable(),
 });
 
 export const letterThemeSchema = z.object({

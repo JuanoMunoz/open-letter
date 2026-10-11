@@ -17,6 +17,13 @@ import {
   SectionChapter,
   SectionSong,
 } from "./Sections";
+import {
+  SectionReasons,
+  SectionOpenWhen,
+  SectionPromises,
+  SectionTimeline,
+  SectionVoice,
+} from "./SectionExtras";
 import { formatExpiry } from "@/lib/dates";
 import type { LetterView, SectionKind } from "./types";
 
@@ -48,13 +55,28 @@ export function LetterViewer({ letter, preview = false, scrollSignal = null }: {
     cardDefs.forEach(({ key, def }) => {
       list.push({ kind: "card", key, label: def.viewerTitle });
     });
+    // Extras/custom con contenido (razones, ábrela-cuándo, promesas, libres).
+    for (const s of letter.sections) {
+      if (s.key === template.sections[0]?.key) continue;
+      if (template.sections.some((d) => d.key === s.key)) continue;
+      const has = s.body.trim() || (s.items ?? []).length > 0 || (s.pairs ?? []).length > 0;
+      if (!has) continue;
+      const kind = (["reasons", "openwhen", "promises"] as const).includes(s.kind as never)
+        ? (s.kind as "reasons" | "openwhen" | "promises")
+        : "card";
+      list.push({ kind, key: s.key, label: s.title || s.key });
+    }
     letter.photos.forEach((_, i) =>
       list.push({ kind: "photo", key: `photo-${i}`, label: `Foto ${i + 1}`, index: i }),
     );
+    if (letter.timeline.length > 0) list.push({ kind: "timeline", key: "timeline", label: "Recuerdos" });
+    if (letter.audio) list.push({ kind: "voice", key: "voice", label: "Nota de voz" });
     if (letter.specialDate) list.push({ kind: "chapter", key: "chapter", label: template.dateSectionTitle });
     if (letter.spotifyTrackId) list.push({ kind: "song", key: "song", label: template.songTitle });
     return list;
   }, [letter, template, cardDefs]);
+
+  const extraByKey = (key: string) => letter.sections.find((x) => x.key === key);
 
   const [active, setActive] = useState(0);
   // Modo noche: valor guardado + interruptor propio para quien lee.
@@ -148,8 +170,6 @@ export function LetterViewer({ letter, preview = false, scrollSignal = null }: {
     );
   }
 
-  const cardByKey = (key: string) => cardDefs.find((c) => c.def.key === key);
-
   return (
     <div
       className="flex min-h-dvh items-center justify-center sm:py-6"
@@ -190,18 +210,45 @@ export function LetterViewer({ letter, preview = false, scrollSignal = null }: {
               {s.kind === "cover" && <SectionCover letter={letter} template={template} />}
               {s.kind === "message" && <SectionMessage letter={letter} active={seenActive.has(i)} />}
               {s.kind === "card" && (() => {
-                const found = cardByKey(s.key);
-                if (!found?.body) return null;
+                const fromTemplate = cardDefs.find((c) => c.key === s.key);
+                if (fromTemplate) {
+                  return (
+                    <SectionCard
+                      def={fromTemplate.def}
+                      body={fromTemplate.body}
+                      active={seenActive.has(i)}
+                      polaroid={cardPhoto(cardOrder++)}
+                    />
+                  );
+                }
+                const custom = extraByKey(s.key);
+                if (!custom?.body.trim()) return null;
                 return (
                   <SectionCard
-                    def={found.def}
-                    body={found.body}
+                    def={{ key: custom.key, label: custom.title, placeholder: "", icon: custom.icon || "Sparkles", viewerTitle: custom.title || custom.key, suggestions: [], defaultEnabled: true, maxLength: 1200 }}
+                    body={custom.body}
                     active={seenActive.has(i)}
                     polaroid={cardPhoto(cardOrder++)}
                   />
                 );
               })()}
               {s.kind === "photo" && <SectionPhoto photo={letter.photos[s.index]} />}
+              {(s.kind === "reasons" || s.kind === "promises") && (() => {
+                const found = extraByKey(s.key);
+                if (!found) return null;
+                return s.kind === "reasons"
+                  ? <SectionReasons item={found} />
+                  : <SectionPromises item={found} />;
+              })()}
+              {s.kind === "openwhen" && (() => {
+                const found = extraByKey(s.key);
+                if (!found) return null;
+                return <SectionOpenWhen item={found} />;
+              })()}
+              {s.kind === "timeline" && (
+                <SectionTimeline items={letter.timeline} />
+              )}
+              {s.kind === "voice" && letter.audio && <SectionVoice audio={letter.audio} />}
               {s.kind === "chapter" && letter.specialDate && (
                 <SectionChapter letter={letter} template={template} active={seenActive.has(i)} />
               )}

@@ -14,6 +14,8 @@ import { BrandMark } from "@/components/BrandMark";
 import { getTemplate, getTemplates, themeVars, type LetterTemplate } from "@/templates";
 import { fromDef, hasContent, uid, type WizardSection } from "@/components/wizard/sections-model";
 import { parseSpotifyTrackId } from "@/lib/spotify";
+import type { WizardMilestone } from "@/components/wizard/TimelineEditor";
+import type { WizardAudio } from "@/components/wizard/VoiceRecorder";
 import type { WizardPhoto } from "@/components/wizard/PhotoUploader";
 import type { LetterView } from "@/components/viewer/types";
 import type { SectionItem } from "@/templates/types";
@@ -35,6 +37,8 @@ interface WizardState {
   tone: string;
   style: StyleState;
   spotifyUrl: string;
+  timeline: WizardMilestone[];
+  audio: WizardAudio | null;
   visited: number[];
 }
 
@@ -55,6 +59,8 @@ function load(): { state: WizardState; resumed: boolean } {
     tone: "Romántico",
     style: {},
     spotifyUrl: "",
+    timeline: [],
+    audio: null,
     visited: [0],
   });
   try {
@@ -109,6 +115,7 @@ export default function CrearPage() {
   const [s, setS] = useState<WizardState>(init.state);
   const [resumedBanner, setResumedBanner] = useState(init.resumed);
   const [photos, setPhotos] = useState<WizardPhoto[]>([]);
+  const [audioBusy, setAudioBusy] = useState(false);
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
   const [switchOpen, setSwitchOpen] = useState(false);
@@ -182,7 +189,7 @@ export default function CrearPage() {
   const step2Valid = !!requiredSec && requiredSec.body.trim().length > 0;
   const uploading = photos.some((p) => p.uploading);
   const failedUpload = photos.some((p) => !p.uploading && !p.key);
-  const step3Valid = !uploading && !failedUpload && photos.filter((p) => p.key).length <= 10;
+  const step3Valid = !uploading && !failedUpload && !audioBusy && photos.filter((p) => p.key).length <= 10;
 
   const spotifyId = useMemo(() => (s.spotifyUrl.trim() ? parseSpotifyTrackId(s.spotifyUrl.trim()) : null), [s.spotifyUrl]);
   const spotifyInvalid = s.spotifyUrl.trim().length > 0 && !spotifyId;
@@ -254,11 +261,20 @@ export default function CrearPage() {
             nightMode: s.style.nightMode,
           },
           opening: s.style.opening ?? template.opening,
-          timeline: [],
+          timeline: s.timeline
+            .filter((m) => m.title.trim())
+            .slice(0, 8)
+            .map((m) => ({
+              date: m.date || null,
+              title: m.title.trim().slice(0, 60),
+              body: m.body.trim().slice(0, 200),
+              assetKey: m.assetKey ?? null,
+            })),
           spotifyTrackId: spotifyId,
           photos: photos
             .filter((p) => p.key && p.url)
             .map((p) => ({ key: p.key!, url: p.url!, caption: p.caption, takenOn: p.takenOn || null, place: p.place })),
+          assets: s.audio ? [{ kind: "audio", key: s.audio.key, url: s.audio.url, durationS: s.audio.durationS, mime: s.audio.mime }] : [],
           website: "",
         }),
       });
@@ -330,7 +346,10 @@ export default function CrearPage() {
       senderName: s.senderName || null,
       mainMessage: main || "…",
       sections: items,
-      timeline: [],
+      timeline: s.timeline
+        .filter((m) => m.title.trim())
+        .slice(0, 8)
+        .map((m) => ({ date: m.date || undefined, title: m.title.trim(), body: m.body.trim() })),
       theme: {
         colorId: s.style.colorId,
         font: s.style.font,
@@ -344,7 +363,7 @@ export default function CrearPage() {
       photos: photos
         .filter((p) => p.url || p.preview)
         .map((p) => ({ url: p.url || p.preview, caption: p.caption || null, takenOn: p.takenOn || null, place: p.place || null })),
-      audio: null,
+      audio: s.audio ? { url: s.audio.url, durationS: s.audio.durationS, mime: s.audio.mime } : null,
     };
   }, [s, photos, template, spotifyId]);
 
@@ -457,6 +476,11 @@ export default function CrearPage() {
                   setSpotifyUrl={(spotifyUrl) => patch({ spotifyUrl })}
                   uploading={uploading}
                   failedUpload={failedUpload}
+                  timeline={s.timeline}
+                  setTimeline={(timeline) => patch({ timeline })}
+                  audio={s.audio}
+                  setAudio={(audio) => patch({ audio })}
+                  onAudioBusy={setAudioBusy}
                 />
               )}
               {step === 4 && (

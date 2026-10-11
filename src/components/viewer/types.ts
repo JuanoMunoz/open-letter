@@ -36,6 +36,11 @@ export type SectionKind =
   | { kind: "cover"; key: string; label: string }
   | { kind: "message"; key: string; label: string }
   | { kind: "card"; key: string; label: string }
+  | { kind: "reasons"; key: string; label: string }
+  | { kind: "openwhen"; key: string; label: string }
+  | { kind: "promises"; key: string; label: string }
   | { kind: "photo"; key: string; label: string; index: number }
   | { kind: "chapter"; key: string; label: string }
-  | { kind: "song"; key: string; label: string };
+  | { kind: "song"; key: string; label: string }
+  | { kind: "timeline"; key: string; label: string }
+  | { kind: "voice"; key: string; label: string };

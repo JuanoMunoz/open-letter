@@ -8,6 +8,7 @@ import QRCode from "qrcode";
 import { Copy, Check, Eye, Share2, Trash2, QrCode, Download, MessageCircle, Mail, Inbox } from "lucide-react";
 import { getTemplate } from "@/templates";
 import { ui } from "@/templates/ui";
+import { useToast } from "@/components/Toast";
 
 export default function ExitoPage() {
   const params = useParams<{ id: string }>();
@@ -22,6 +23,7 @@ export default function ExitoPage() {
   const [deleted, setDeleted] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [qr, setQr] = useState("");
+  const { confirm, toast } = useToast();
   const [makingCard, setMakingCard] = useState(false);
   const [meta] = useState(() => {
     if (typeof window === "undefined") return { recipientName: "", templateId: "amor" };
@@ -47,12 +49,8 @@ export default function ExitoPage() {
     try {
       await navigator.clipboard.writeText(fullUrl);
     } catch {
-      const ta = document.createElement("textarea");
-      ta.value = fullUrl;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      ta.remove();
+      toast(ui.copyFailed, "error");
+      return;
     }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -159,7 +157,8 @@ export default function ExitoPage() {
   const mailUrl = `mailto:?subject=${encodeURIComponent(ui.giftMailSubject)}&body=${encodeURIComponent(ui.giftMailBody(fullUrl))}`;
 
   const remove = async () => {
-    if (!confirm(ui.deleteConfirm)) return;
+    const ok = await confirm({ title: ui.deleteConfirm, body: ui.deleteConfirmBody, confirmLabel: ui.deleteNow, danger: true });
+    if (!ok) return;
     setDeleting(true);
     setDeleteError("");
     try {

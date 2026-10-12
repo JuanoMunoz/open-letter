@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Caveat, Fraunces, Kalam, Dancing_Script } from "next/font/google";
 import { ui } from "@/templates/ui";
+import { ToastProvider } from "@/components/Toast";
 import "../styles/globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -25,7 +26,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
       <html lang="es" className={`${inter.variable} ${caveat.variable} ${fraunces.variable} ${kalam.variable} ${dancing.variable} h-full`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col"><ToastProvider>{children}</ToastProvider></body>
     </html>
   );
 }

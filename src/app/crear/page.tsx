@@ -12,6 +12,7 @@ import { StepStyle, type StyleState } from "@/components/wizard/steps/StepStyle"
 import { PreviewPanel, PreviewFab } from "@/components/wizard/PreviewPanel";
 import { BrandMark } from "@/components/BrandMark";
 import { TemplateIcon } from "@/components/TemplateIcon";
+import { useToast } from "@/components/Toast";
 import { getTemplate, getTemplates, themeVars, type LetterTemplate } from "@/templates";
 import { ui } from "@/templates/ui";
 import { fromDef, hasContent, uid, type WizardSection } from "@/components/wizard/sections-model";
@@ -112,6 +113,7 @@ function load(): { state: WizardState; resumed: boolean } {
 
 export default function CrearPage() {
   const router = useRouter();
+  const { confirm } = useToast();
   const reduceMotion = useReducedMotion();
   const [init] = useState(load);
   const [step, setStep] = useState(0);
@@ -145,8 +147,9 @@ export default function CrearPage() {
   const patch = (p: Partial<WizardState>) => setS((prev) => ({ ...prev, ...p }));
   const setSections = (sections: WizardSection[]) => setS((prev) => ({ ...prev, sections }));
 
-  const discardDraft = () => {
-    if (!confirm("¿Descartar el borrador y empezar de cero?")) return;
+  const discardDraft = async () => {
+    const ok = await confirm({ title: ui.discardTitle, confirmLabel: ui.discardConfirm, danger: true });
+    if (!ok) return;
     try {
       localStorage.removeItem(STORE_KEY);
     } catch { /* noop */ }

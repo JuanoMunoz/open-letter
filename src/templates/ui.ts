@@ -52,6 +52,10 @@ export const ui = {
   deleting: "Eliminando…",
   deleted: "Carta eliminada para siempre.",
   deleteConfirm: "¿Eliminar esta carta ahora mismo? No se podrá recuperar.",
+  deleteConfirmBody: "Se borran la carta, sus fotos, audios y respuestas.",
+  discardTitle: "¿Descartar el borrador y empezar de cero?",
+  discardConfirm: "Descartar",
+  copyFailed: "No se pudo copiar. Mantén presionado el enlace para copiarlo.",
   networkError: "Error de red.",
 
   photosTitle: "Fotos",
@@ -240,7 +244,6 @@ export const ui = {
   savedDraft: (time: string) => `Borrador guardado · ${time}`,
   resumeTitle: "Continuar donde lo dejaste",
   discardDraft: "Descartar borrador",
-  discardConfirm: "¿Descartar el borrador y empezar de cero?",
   keepGoing: "Seguir",
   mandatoryCheck: "Revisa los campos obligatorios.",
   createFailed: "No se pudo crear la carta. Intenta de nuevo.",

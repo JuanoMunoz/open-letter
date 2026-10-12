@@ -9,6 +9,7 @@ import { Eye, Clock, Trash2, Inbox } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { formatExpiry } from "@/lib/dates";
 import { ui } from "@/templates/ui";
+import { useToast } from "@/components/Toast";
 
 interface Reply {
   id: string;
@@ -149,11 +150,24 @@ export default function RespuestasPage() {
 
 function DeleteButton({ id, token }: { id: string; token: string }) {
   const router = useRouter();
+  const { confirm, toast } = useToast();
   const [busy, setBusy] = useState(false);
   const remove = async () => {
-    if (!confirm(ui.deleteConfirm)) return;
+    const ok = await confirm({ title: ui.deleteConfirm, body: ui.deleteConfirmBody, confirmLabel: ui.deleteNow, danger: true });
+    if (!ok) return;
     setBusy(true);
-    await fetch(`/api/cartas/${id}`, { method: "DELETE", headers: { "x-manage-token": token } });
+    try {
+      const res = await fetch(`/api/cartas/${id}`, { method: "DELETE", headers: { "x-manage-token": token } });
+      if (res.status !== 204) {
+        toast(ui.deleteFailed, "error");
+        setBusy(false);
+        return;
+      }
+    } catch {
+      toast(ui.networkError, "error");
+      setBusy(false);
+      return;
+    }
     router.push("/");
   };
   return (

@@ -1,6 +1,7 @@
 "use client";
 
 import type { SectionKind } from "./types";
+import { ui } from "@/templates/ui";
 
 export function DotNav({
   sections,
@@ -13,14 +14,14 @@ export function DotNav({
 }) {
   return (
     <nav
-      aria-label="Navegación de la carta"
+      aria-label={ui.letterNav}
       className="absolute left-3 top-1/2 z-20 flex -translate-y-1/2 flex-col gap-2.5"
     >
       {sections.map((s, i) => (
         <button
           key={s.key}
           onClick={() => onGo(i)}
-          aria-label={`Ir a ${s.label}`}
+          aria-label={ui.goToSection(s.label)}
           aria-current={i === active ? "true" : undefined}
           className="flex h-4 w-4 items-center justify-center"
           style={{ cursor: "pointer" }}

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { ui } from "@/templates/ui";
 
 export const metadata: Metadata = {
-  title: "Crear carta — openletter",
+  title: ui.seoCreateTitle,
   robots: { index: false, follow: false },
 };
 

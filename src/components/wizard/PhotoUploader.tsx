@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { UploadCloud, X, ArrowLeft, ArrowRight, MapPin, CalendarDays } from "lucide-react";
+import { UploadCloud, X, ArrowLeft, ArrowRight, MapPin, CalendarDays, Camera } from "lucide-react";
 import { useUploadThing } from "@/lib/uploadthing-client";
 import { FieldCounter } from "./FieldCounter";
+import { ui } from "@/templates/ui";
 
 export interface WizardPhoto {
   localId: string;
@@ -61,7 +62,7 @@ export function PhotoUploader({
           const localId = Math.random().toString(36).slice(2);
           arr.push({
             localId, preview: URL.createObjectURL(file), uploading: false, progress: 0,
-            error: "Máx. 8 MB por foto", caption: "", takenOn: "", place: "", showDate: false, showPlace: false,
+            error: ui.fileTooBig, caption: "", takenOn: "", place: "", showDate: false, showPlace: false,
           });
           continue;
         }
@@ -91,14 +92,14 @@ export function PhotoUploader({
             if (uploaded?.key && url) {
               arr[ix] = { ...arr[ix], key: uploaded.key, url, uploading: false, progress: 100 };
             } else {
-              arr[ix] = { ...arr[ix], uploading: false, error: "Falló la subida, reintenta" };
+              arr[ix] = { ...arr[ix], uploading: false, error: ui.uploadRetry };
             }
             setPhotos([...arr]);
           }
         } catch (e) {
           const ix = arr.findIndex((p) => p.localId === localId);
           if (ix >= 0) {
-            arr[ix] = { ...arr[ix], uploading: false, error: (e as Error)?.message ?? "Falló la subida" };
+            arr[ix] = { ...arr[ix], uploading: false, error: (e as Error)?.message ?? ui.uploadRetry };
             setPhotos([...arr]);
           }
         }
@@ -150,11 +151,11 @@ export function PhotoUploader({
     <div>
       <div className="mb-2 flex items-center gap-2">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FBE4EC] text-[#D6457F]">
-          📷
+          <Camera size={18} />
         </span>
-        <p className="text-[11px] font-bold uppercase tracking-wide text-[#E0698F]">Fotos</p>
+        <p className="text-[11px] font-bold uppercase tracking-wide text-[#E0698F]">{ui.photosTitle}</p>
         <span className="ml-auto text-[11px] font-bold text-[#6B6B76]">
-          {photos.length} foto(s) añadida(s)
+          {ui.photosAdded(photos.length)}
         </span>
       </div>
 
@@ -167,11 +168,11 @@ export function PhotoUploader({
           dragOver ? "border-[#E0698F] bg-[#FBE4EC]" : "border-[#D6D6DC] bg-[#EBEBEF]"
         }`}
         role="button"
-        aria-label="Subir fotos"
+        aria-label={ui.uploadPhoto}
       >
         <UploadCloud className="mb-2 text-[#E0698F]" size={28} />
-        <p className="text-sm font-semibold text-neutral-700">Haz clic o arrastra tus fotos aquí</p>
-        <p className="mt-1 text-xs text-[#6B6B76]">Máx. 10 fotos · 8 MB c/u · JPG, PNG, WebP</p>
+        <p className="text-sm font-semibold text-neutral-700">{ui.photosDrop}</p>
+        <p className="mt-1 text-xs text-[#6B6B76]">{ui.photosLimits}</p>
         <input
           ref={inputRef}
           type="file"
@@ -191,7 +192,7 @@ export function PhotoUploader({
           {photos.map((p, i) => (
             <div key={p.localId} className="relative h-[120px] overflow-hidden rounded-xl bg-[#D6D6DC]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.preview} alt={`Foto ${i + 1}`} className="h-full w-full object-cover" />
+              <img src={p.preview} alt={ui.photoAlt(i + 1)} className="h-full w-full object-cover" />
               {p.uploading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/45">
                   <svg viewBox="0 0 36 36" className="h-10 w-10 -rotate-90">
@@ -211,16 +212,16 @@ export function PhotoUploader({
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); void removeAt(i); }}
-                aria-label={`Eliminar foto ${i + 1}`}
+                aria-label={ui.photoRemove(i + 1)}
                 className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow"
               >
                 <X size={13} />
               </button>
               <div className="absolute bottom-1 left-1 flex gap-1">
-                <button type="button" onClick={(e) => { e.stopPropagation(); move(i, -1); }} aria-label="Mover a la izquierda" className="flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-white">
+                <button type="button" onClick={(e) => { e.stopPropagation(); move(i, -1); }} aria-label={ui.photoMoveLeft} className="flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-white">
                   <ArrowLeft size={12} />
                 </button>
-                <button type="button" onClick={(e) => { e.stopPropagation(); move(i, 1); }} aria-label="Mover a la derecha" className="flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-white">
+                <button type="button" onClick={(e) => { e.stopPropagation(); move(i, 1); }} aria-label={ui.photoMoveRight} className="flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-white">
                   <ArrowRight size={12} />
                 </button>
               </div>
@@ -230,14 +231,14 @@ export function PhotoUploader({
         </div>
       )}
       {photos.length > 0 && (
-        <p className="mt-1 text-right text-xs font-semibold text-orange-500">{photos.length} imagen(es)</p>
+        <p className="mt-1 text-right text-xs font-semibold text-orange-500">{ui.imagesCount(photos.length)}</p>
       )}
 
       {/* Descripciones por foto */}
       {photos.map((p, i) => (
         <div key={`meta-${p.localId}`} className="mt-3 rounded-2xl border border-[#E4E4E8] bg-white p-3">
           <div className="mb-1 flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B76]">Añadir descripción · foto {i + 1}</span>
+            <span className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B76]">{ui.captionTitle(i + 1)}</span>
             <FieldCounter value={p.caption.length} max={120} />
           </div>
           <div className="flex items-center gap-2">
@@ -246,7 +247,7 @@ export function PhotoUploader({
             <input
               value={p.caption}
               onChange={(e) => patch(i, { caption: e.target.value.slice(0, 120) })}
-              placeholder="Mi amor de vida en mi ciudad."
+              placeholder={ui.captionPlaceholder}
               maxLength={120}
               className="w-full rounded-xl border border-[#D6D6DC] bg-[#EBEBEF] px-3 py-2.5 text-[15px] outline-none placeholder:text-neutral-400 focus:border-[#E0698F]"
             />
@@ -258,24 +259,24 @@ export function PhotoUploader({
                 value={p.takenOn}
                 onChange={(e) => patch(i, { takenOn: e.target.value })}
                 className="rounded-lg border border-[#D6D6DC] bg-[#EBEBEF] px-2 py-1.5 text-sm"
-                aria-label="Fecha de la foto"
+                aria-label={ui.photoDateLabel}
               />
             ) : (
               <button type="button" onClick={() => patch(i, { showDate: true })} className="flex items-center gap-1 text-xs font-bold uppercase text-[#E0698F]">
-                <CalendarDays size={13} /> Añadir fecha
+                <CalendarDays size={13} /> {ui.addDate}
               </button>
             )}
             {p.showPlace ? (
               <input
                 value={p.place}
                 onChange={(e) => patch(i, { place: e.target.value.slice(0, 120) })}
-                placeholder="Lugar…"
+                placeholder={ui.photoPlacePlaceholder}
                 className="w-40 rounded-lg border border-[#D6D6DC] bg-[#EBEBEF] px-2 py-1.5 text-sm"
-                aria-label="Lugar de la foto"
+                aria-label={ui.photoPlaceLabel}
               />
             ) : (
               <button type="button" onClick={() => patch(i, { showPlace: true })} className="flex items-center gap-1 text-xs font-bold uppercase text-[#6B6B76]">
-                <MapPin size={13} /> Añadir lugar
+                <MapPin size={13} /> {ui.addPlace}
               </button>
             )}
           </div>

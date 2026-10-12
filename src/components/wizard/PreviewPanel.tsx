@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Eye, Monitor, Smartphone, RotateCw, Maximize2, X } from "lucide-react";
+import { ui } from "@/templates/ui";
 import type { LetterView } from "@/components/viewer/types";
 
 /** Panel de vista previa en vivo (iframe /preview + postMessage con debounce). */
@@ -80,7 +81,7 @@ export function PreviewPanel({
             type="button"
             onClick={() => setDevice("mobile")}
             aria-pressed={device === "mobile"}
-            aria-label="Vista móvil"
+            aria-label={ui.previewMobile}
             className={`flex h-7 w-7 items-center justify-center rounded-full ${device === "mobile" ? "bg-white shadow" : "text-neutral-400"}`}
           >
             <Smartphone size={14} />
@@ -89,27 +90,27 @@ export function PreviewPanel({
             type="button"
             onClick={() => setDevice("desktop")}
             aria-pressed={device === "desktop"}
-            aria-label="Vista escritorio"
+            aria-label={ui.previewDesktop}
             className={`flex h-7 w-7 items-center justify-center rounded-full ${device === "desktop" ? "bg-white shadow" : "text-neutral-400"}`}
           >
             <Monitor size={14} />
           </button>
         </div>
-        <span className="ml-1 text-[11px] font-bold uppercase tracking-wide text-[#6B6B76]">Vista previa</span>
+        <span className="ml-1 text-[11px] font-bold uppercase tracking-wide text-[#6B6B76]">{ui.previewTitle}</span>
         <span className="ml-auto flex gap-1">
-          <button type="button" onClick={reload} aria-label="Recargar vista previa" className="flex h-7 w-7 items-center justify-center rounded-full text-neutral-500 hover:bg-[#EBEBEF]">
+          <button type="button" onClick={reload} aria-label={ui.previewReload} className="flex h-7 w-7 items-center justify-center rounded-full text-neutral-500 hover:bg-[#EBEBEF]">
             <RotateCw size={14} />
           </button>
           <button
             type="button"
             onClick={() => window.open("/preview", "_blank", "noopener")}
-            aria-label="Abrir vista previa en pantalla completa"
+            aria-label={ui.previewFullscreen}
             className="flex h-7 w-7 items-center justify-center rounded-full text-neutral-500 hover:bg-[#EBEBEF]"
           >
             <Maximize2 size={14} />
           </button>
           {drawer && (
-            <button type="button" onClick={onCloseDrawer} aria-label="Cerrar vista previa" className="flex h-7 w-7 items-center justify-center rounded-full bg-[#EBEBEF] text-neutral-600">
+            <button type="button" onClick={onCloseDrawer} aria-label={ui.previewClose} className="flex h-7 w-7 items-center justify-center rounded-full bg-[#EBEBEF] text-neutral-600">
               <X size={15} />
             </button>
           )}
@@ -118,7 +119,7 @@ export function PreviewPanel({
       <div className="flex flex-1 items-start justify-center overflow-hidden bg-[#EDEDF1] p-3">
         <iframe
           ref={iframeRef}
-          title="Vista previa de la carta"
+          title={ui.previewFrameTitle}
           src="/preview"
           loading="lazy"
           className="h-full rounded-[20px] border border-[#D6D6DC] bg-white"
@@ -130,7 +131,7 @@ export function PreviewPanel({
 
   if (drawer) {
     return (
-      <div className="fixed inset-0 z-50 bg-black/40 p-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Vista previa">
+      <div className="fixed inset-0 z-50 bg-black/40 p-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={ui.previewTitle}>
         <div className="mx-auto h-full max-w-lg">{frame}</div>
       </div>
     );
@@ -144,10 +145,10 @@ export function PreviewFab({ onOpen }: { onOpen: () => void }) {
     <button
       type="button"
       onClick={onOpen}
-      aria-label="Abrir vista previa"
+      aria-label={ui.previewOpen}
       className="fixed bottom-24 right-4 z-40 flex items-center gap-1.5 rounded-full bg-neutral-900 px-4 py-3 text-sm font-bold text-white shadow-xl lg:hidden"
     >
-      <Eye size={16} /> Vista previa
+      <Eye size={16} /> {ui.previewTitle}
     </button>
   );
 }

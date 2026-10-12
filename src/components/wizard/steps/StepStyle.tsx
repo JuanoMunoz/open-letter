@@ -1,6 +1,7 @@
 "use client";
 
 import { Moon, Lock, CalendarClock, KeyRound } from "lucide-react";
+import { TemplateIcon } from "@/components/TemplateIcon";
 import {
   THEME_COLOR_IDS,
   THEME_FONTS,
@@ -10,6 +11,7 @@ import {
   type ThemeColorId,
 } from "@/templates/theme-palettes";
 import { formatExpiry } from "@/lib/dates";
+import { ui } from "@/templates/ui";
 import { expiresAtFromNow } from "@/lib/expiry";
 import type { LetterTemplate } from "@/templates/types";
 
@@ -21,17 +23,6 @@ export interface StyleState {
   nightMode?: boolean;
   opening?: string;
 }
-
-const FONT_LABEL: Record<string, string> = { caveat: "Caveat", kalam: "Kalam", dancing: "Dancing Script" };
-const PARTICLE_LABEL: Record<string, string> = {
-  petalos: "Pétalos",
-  corazones: "Corazones",
-  estrellas: "Estrellas",
-  confeti: "Confeti",
-  nieve: "Nieve",
-  ninguna: "Ninguna",
-};
-const BG_LABEL: Record<string, string> = { foto: "Foto difuminada", liso: "Color liso" };
 
 /** Paso 4: estilo con vista previa de opciones + resumen. */
 export function StepStyle({
@@ -66,7 +57,7 @@ export function StepStyle({
       </h1>
 
       <div>
-        <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#6B6B76]">Color</p>
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#6B6B76]">{ui.styleColor}</p>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -97,7 +88,7 @@ export function StepStyle({
       </div>
 
       <div>
-        <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#6B6B76]">Letra de la carta</p>
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#6B6B76]">{ui.styleFont}</p>
         <div className="flex flex-wrap gap-2">
           {THEME_FONTS.map((f) => {
             const active = (value.font ?? template.theme.font) === f;
@@ -111,7 +102,7 @@ export function StepStyle({
                 style={active ? { background: "var(--brand, #E0698F)" } : undefined}
               >
                 <span className={f === "kalam" ? "font-kalam" : f === "dancing" ? "font-dancing" : "font-script"} style={{ fontSize: 17 }}>
-                  {FONT_LABEL[f]} Ag
+                  {ui.fontName(f)} Ag
                 </span>
               </button>
             );
@@ -120,7 +111,7 @@ export function StepStyle({
       </div>
 
       <div>
-        <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#6B6B76]">Partículas</p>
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#6B6B76]">{ui.styleParticles}</p>
         <div className="flex flex-wrap gap-2">
           {THEME_PARTICLES.map((p) => {
             const active = (value.particles ?? template.particles) === p;
@@ -133,7 +124,7 @@ export function StepStyle({
                 className={chip(active)}
                 style={active ? { background: "var(--brand, #E0698F)" } : undefined}
               >
-                {PARTICLE_LABEL[p]}
+                {ui.particleName(p)}
               </button>
             );
           })}
@@ -141,7 +132,7 @@ export function StepStyle({
       </div>
 
       <div>
-        <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#6B6B76]">Fondo</p>
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#6B6B76]">{ui.styleBackground}</p>
         <div className="flex flex-wrap gap-2">
           {THEME_BACKGROUNDS.map((bg) => {
             const active = (value.background ?? "foto") === bg;
@@ -154,7 +145,7 @@ export function StepStyle({
                 className={chip(active)}
                 style={active ? { background: "var(--brand, #E0698F)" } : undefined}
               >
-                {BG_LABEL[bg]}
+                {ui.backgroundName(bg)}
               </button>
             );
           })}
@@ -162,11 +153,11 @@ export function StepStyle({
       </div>
 
       <div>
-        <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#6B6B76]">Apertura</p>
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#6B6B76]">{ui.styleOpening}</p>
         <div className="flex flex-wrap gap-2">
           {[
-            { id: "sobre", label: "Sobre" },
-            { id: "ninguna", label: "Directa" },
+            { id: "sobre", label: ui.openingEnvelope },
+            { id: "ninguna", label: ui.openingDirect },
           ].map((o) => {
             const active = (value.opening ?? template.opening) === o.id;
             return (
@@ -184,7 +175,7 @@ export function StepStyle({
           })}
           {(["regalo", "raspadita"] as const).map((o) => (
             <span key={o} className="rounded-full border-2 border-dashed border-[#D6D6DC] px-3.5 py-1.5 text-xs font-bold text-neutral-400">
-              {o === "regalo" ? "Regalo" : "Raspadita"} · pronto
+              {o === "regalo" ? ui.openingGift : ui.openingScratch} · {ui.openingSoon}
             </span>
           ))}
         </div>
@@ -194,14 +185,14 @@ export function StepStyle({
         type="button"
         role="switch"
         aria-checked={!!value.nightMode}
-        aria-label="Modo noche del visor"
+        aria-label={ui.nightLabel}
         onClick={() => onPatch({ nightMode: !value.nightMode })}
         className="flex w-full items-center gap-2.5 rounded-2xl border border-[#E4E4E8] bg-white p-4 text-left"
       >
         <Moon size={18} className="text-neutral-600" />
         <span>
-          <span className="block text-sm font-bold">Modo noche</span>
-          <span className="block text-xs text-[#6B6B76]">Quien la lea puede cambiarlo dentro de la carta</span>
+          <span className="block text-sm font-bold">{ui.nightTitle}</span>
+          <span className="block text-xs text-[#6B6B76]">{ui.nightSub}</span>
         </span>
         <span
           className="relative ml-auto h-6 w-11 shrink-0 rounded-full transition"
@@ -213,32 +204,32 @@ export function StepStyle({
 
       <div className="rounded-2xl border border-[#E4E4E8] bg-white p-4">
         <p className="mb-1 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#6B6B76]">
-          <KeyRound size={13} /> Protegerla con una palabra secreta
-          <span className="font-normal normal-case tracking-normal">(opcional)</span>
+          <KeyRound size={13} /> {ui.secretTitle}
+          <span className="font-normal normal-case tracking-normal">{ui.secretOptional}</span>
         </p>
         <input
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value.slice(0, 32))}
-          placeholder="Palabra secreta (4–32 caracteres)"
+          placeholder={ui.secretPlaceholder}
           autoComplete="new-password"
           maxLength={32}
-          aria-label="Palabra secreta (opcional)"
+          aria-label={ui.secretLabel}
           className="h-[50px] w-full rounded-xl border border-[#D6D6DC] bg-[#EBEBEF] px-4 text-[16px] outline-none placeholder:text-neutral-400 focus:border-[#E0698F]"
         />
         {password.length > 0 && password.length < 4 && (
-          <p className="mt-1 text-xs font-semibold text-red-500">Mínimo 4 caracteres.</p>
+          <p className="mt-1 text-xs font-semibold text-red-500">{ui.secretShort}</p>
         )}
         <input
           value={passwordHint}
           onChange={(e) => setPasswordHint(e.target.value.slice(0, 80))}
-          placeholder="Pista visible (opcional): donde nos conocimos"
-          aria-label="Pista de la palabra secreta (opcional)"
+          placeholder={ui.secretHintPlaceholder}
+          aria-label={ui.secretHintLabel}
           maxLength={80}
           className="mt-2 h-[46px] w-full rounded-xl border border-[#D6D6DC] bg-[#EBEBEF] px-4 text-[15px] outline-none placeholder:text-neutral-400 focus:border-[#E0698F]"
         />
         <p className="mt-1.5 text-xs leading-snug text-[#6B6B76]">
-          Sin la palabra, ni siquiera el servidor muestra el contenido.
+          {ui.secretNote}
         </p>
       </div>
 
@@ -246,16 +237,19 @@ export function StepStyle({
 
       {/* Resumen */}
       <div className="rounded-3xl border border-[#E4E4E8] bg-white p-5">
-        <p className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#6B6B76]">Resumen</p>
+        <p className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#6B6B76]">{ui.styleSummary}</p>
         <ul className="space-y-1.5 text-sm text-neutral-700">
           <li>
-            <strong>{template.emoji} {template.name}</strong> · {sectionCount} sección(es) con texto · {photoCount} foto(s)
+            <strong className="inline-flex items-center gap-1.5">
+              <TemplateIcon icon={template.icon} brand={template.theme.brand} box={22} size={13} />
+              {template.name}
+            </strong> · {ui.summaryCounts(sectionCount, photoCount)}
           </li>
           <li className="flex items-center gap-1.5 text-[#6B6B76]">
-            <CalendarClock size={14} /> Disponible hasta {formatExpiry(expiresAtFromNow(new Date()))}. Después se elimina para siempre.
+            <CalendarClock size={14} /> {ui.summaryExpiry(formatExpiry(expiresAtFromNow(new Date())))}.
           </li>
           <li className="flex items-center gap-1.5 text-[#6B6B76]">
-            <Lock size={14} /> Muy pronto: palabra secreta y respuestas del destinatario.
+            <Lock size={14} /> {password ? ui.summaryProtected : ui.summaryOpen}
           </li>
         </ul>
       </div>

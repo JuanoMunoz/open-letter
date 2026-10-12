@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getTemplate } from "@/templates";
+import { ui } from "@/templates/ui";
 
 const t = getTemplate("amor");
 
@@ -12,7 +13,7 @@ export default function ExpiradaPage() {
         href="/crear"
         className="mt-6 rounded-full bg-neutral-900 px-7 py-3 text-sm font-bold text-white"
       >
-        {t.expiredCta}
+        {ui.ctaCreateAnother}
       </Link>
     </div>
   );

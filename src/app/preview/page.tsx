@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { ui } from "@/templates/ui";
 import PreviewClient from "./PreviewClient";
 
 export const metadata: Metadata = {
-  title: "Vista previa — openletter",
+  title: ui.seoPreviewTitle,
   robots: { index: false, follow: false },
 };
 

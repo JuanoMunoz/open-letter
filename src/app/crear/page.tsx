@@ -11,7 +11,9 @@ import { StepMemories } from "@/components/wizard/steps/StepMemories";
 import { StepStyle, type StyleState } from "@/components/wizard/steps/StepStyle";
 import { PreviewPanel, PreviewFab } from "@/components/wizard/PreviewPanel";
 import { BrandMark } from "@/components/BrandMark";
+import { TemplateIcon } from "@/components/TemplateIcon";
 import { getTemplate, getTemplates, themeVars, type LetterTemplate } from "@/templates";
+import { ui } from "@/templates/ui";
 import { fromDef, hasContent, uid, type WizardSection } from "@/components/wizard/sections-model";
 import { parseSpotifyTrackId } from "@/lib/spotify";
 import type { WizardMilestone } from "@/components/wizard/TimelineEditor";
@@ -34,7 +36,6 @@ interface WizardState {
   senderName: string;
   showOptional: boolean;
   sections: WizardSection[];
-  tone: string;
   style: StyleState;
   spotifyUrl: string;
   timeline: WizardMilestone[];
@@ -58,7 +59,6 @@ function load(): { state: WizardState; resumed: boolean } {
     senderName: "",
     showOptional: false,
     sections: sectionsFor(templateId),
-    tone: "Romántico",
     style: {},
     spotifyUrl: "",
     timeline: [],
@@ -240,7 +240,7 @@ export default function CrearPage() {
   const create = async () => {
     setError("");
     if (!step1Valid || !step2Valid) {
-      setError("Revisa los campos obligatorios.");
+      setError(ui.mandatoryCheck);
       return;
     }
     if (s.password && (s.password.length < 4 || s.password.length > 32)) {
@@ -290,7 +290,7 @@ export default function CrearPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError((data as { error?: string }).error ?? "No se pudo crear la carta. Intenta de nuevo.");
+        setError((data as { error?: string }).error ?? ui.createFailed);
         setSending(false);
         return;
       }
@@ -306,7 +306,7 @@ export default function CrearPage() {
       photos.forEach((p) => URL.revokeObjectURL(p.preview));
       router.push(`/crear/exito/${id}#token=${manageToken}`);
     } catch {
-      setError("Error de red. Revisa tu conexión e intenta de nuevo.");
+      setError(ui.networkRetry);
       setSending(false);
     }
   };
@@ -405,10 +405,10 @@ export default function CrearPage() {
                 type="button"
                 onClick={() => setSwitchOpen((v) => !v)}
                 aria-expanded={switchOpen}
-                aria-label="Cambiar plantilla"
+                aria-label={ui.changeTemplate}
                 className="flex items-center gap-1.5 rounded-full border border-[#D6D6DC] bg-white px-3.5 py-2 text-[13px] font-bold text-neutral-800 shadow-sm"
               >
-                <span>{template.emoji}</span>
+                <TemplateIcon icon={template.icon} brand={template.theme.brand} box={24} size={14} />
                 <span className="max-w-[110px] truncate">{template.name}</span>
                 <ChevronDown size={14} className={`transition-transform ${switchOpen ? "rotate-180" : ""}`} />
               </button>
@@ -421,7 +421,7 @@ export default function CrearPage() {
                       onClick={() => switchTemplate(t.id)}
                       className="flex w-full items-center gap-2.5 px-4 py-3 text-left transition hover:bg-[#F4F4F6]"
                     >
-                      <span className="text-xl">{t.emoji}</span>
+                      <TemplateIcon icon={t.icon} brand={t.theme.brand} box={32} size={16} />
                       <span>
                         <span className="block text-sm font-bold text-neutral-900">{t.name}</span>
                         <span className="block text-xs text-[#6B6B76]">{t.tagline}</span>
@@ -435,14 +435,14 @@ export default function CrearPage() {
           </div>
 
           {/* Progreso clicable */}
-          <div className="mb-6 flex gap-1.5" aria-label={`Paso ${step + 1} de 5`}>
+          <div className="mb-6 flex gap-1.5" aria-label={ui.stepOf(step + 1, 5)}>
             {[0, 1, 2, 3, 4].map((i) => (
               <button
                 key={i}
                 type="button"
                 onClick={() => s.visited.includes(i) && go(i)}
                 disabled={!s.visited.includes(i)}
-                aria-label={`Ir al paso ${i + 1}`}
+                aria-label={ui.goToStep(i + 1)}
                 className={`h-1.5 flex-1 rounded-full transition-colors ${s.visited.includes(i) ? "cursor-pointer" : "cursor-default"}`}
                 style={{ background: i <= step ? "var(--brand)" : s.visited.includes(i) ? "color-mix(in srgb, var(--brand) 35%, #E4E4E8)" : "#E4E4E8" }}
               />
@@ -451,13 +451,13 @@ export default function CrearPage() {
 
           {resumedBanner && (
             <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-[#E4E4E8] bg-white px-4 py-3 text-sm shadow-sm" role="status">
-              <span className="font-semibold text-neutral-700">Continuar donde lo dejaste</span>
+              <span className="font-semibold text-neutral-700">{ui.resumeTitle}</span>
               {savedAt && <span className="text-xs text-[#6B6B76]">· guardado {savedAt}</span>}
               <button type="button" onClick={discardDraft} className="ml-auto text-xs font-bold text-red-500 hover:underline">
-                Descartar borrador
+                {ui.discardDraft}
               </button>
-              <button type="button" onClick={() => setResumedBanner(false)} aria-label="Ocultar aviso" className="text-xs font-bold text-neutral-400 hover:underline">
-                Seguir
+              <button type="button" onClick={() => setResumedBanner(false)} aria-label={ui.keepGoing} className="text-xs font-bold text-neutral-400 hover:underline">
+                {ui.keepGoing}
               </button>
             </div>
           )}
@@ -479,7 +479,7 @@ export default function CrearPage() {
                   <h1 className="font-editorial mb-4 text-[42px] leading-[1.05] text-neutral-900 sm:text-[60px]">
                     {template.wizard.step2Title[0]} <em>{template.wizard.step2Title[1]}</em> {template.wizard.step2Title[2]}
                   </h1>
-                  <StepSections template={template} sections={s.sections} onSections={setSections} tone={s.tone} onTone={(tone) => patch({ tone })} />
+                  <StepSections template={template} sections={s.sections} onSections={setSections} />
                 </div>
               )}
               {step === 3 && (
@@ -516,7 +516,7 @@ export default function CrearPage() {
 
           {savedAt && !resumedBanner && (
             <p className="mt-4 text-center text-[11px] font-semibold text-[#6B6B76]" role="status">
-              Borrador guardado · {savedAt}
+              {ui.savedDraft(savedAt)}
             </p>
           )}
 
@@ -528,7 +528,7 @@ export default function CrearPage() {
         </div>
 
         {/* Panel preview (escritorio) */}
-        <aside className="sticky top-0 hidden h-dvh w-[400px] shrink-0 p-4 lg:block" aria-label="Vista previa en vivo">
+        <aside className="sticky top-0 hidden h-dvh w-[400px] shrink-0 p-4 lg:block" aria-label={ui.previewLive}>
           <PreviewPanel letter={draftLetter} scrollKey={signal} />
         </aside>
       </div>
@@ -562,7 +562,7 @@ export default function CrearPage() {
               disabled={!canNext || sending}
               className="rounded-full bg-neutral-900 px-7 py-3 text-sm font-bold text-white transition enabled:hover:bg-neutral-700 disabled:opacity-40"
             >
-              {sending ? wiz.creating : uploading ? "Subiendo fotos…" : wiz.create}
+              {sending ? wiz.creating : uploading ? ui.uploadingGeneric : wiz.create}
             </button>
           )}
         </div>

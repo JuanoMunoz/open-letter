@@ -8,6 +8,7 @@ import { sectionIcon } from "./icons";
 import { formatLongDate } from "@/lib/dates";
 import type { SectionItem } from "@/templates/types";
 import type { ViewerAudio } from "./types";
+import { ui } from "@/templates/ui";
 
 function CardShell({ children, wide }: { children: React.ReactNode; wide?: boolean }) {
   return (
@@ -155,7 +156,7 @@ export function SectionTimeline({
   return (
     <div className="relative flex h-full items-center justify-center px-6">
       <div className="night-card relative max-h-[84%] w-[88%] overflow-y-auto rounded-[28px] bg-[rgba(255,255,255,.88)] p-5 shadow-[0_10px_40px_rgba(214,69,127,.10)] backdrop-blur-xl">
-        <h3 className="font-letter mb-4 text-center text-[30px] font-semibold text-neutral-900">Recuerdos</h3>
+        <h3 className="font-letter mb-4 text-center text-[30px] font-semibold text-neutral-900">{ui.memoriesTitle}</h3>
         <div className="relative pl-7">
           {/* Hilo */}
           <svg aria-hidden className="absolute bottom-2 left-[9px] top-2 w-[3px]" preserveAspectRatio="none">
@@ -239,10 +240,10 @@ export function SectionReply({ letterId }: { letterId: string }) {
 
   return (
     <CardShell>
-      <CardHeader title="¿Quieres responder?" icon="HeartHandshake" />
+      <CardHeader title={ui.replyTitle} icon="HeartHandshake" />
       {sent ? (
         <p className="py-4 text-center">
-          <span className="font-letter text-[26px] text-neutral-800">¡Respuesta enviada! Gracias por leer.</span>
+          <span className="font-letter text-[26px] text-neutral-800">{ui.replySent}</span>
         </p>
       ) : (
         <>
@@ -269,7 +270,7 @@ export function SectionReply({ letterId }: { letterId: string }) {
             <input
               value={message}
               onChange={(e) => setMessage(e.target.value.slice(0, 280))}
-              placeholder="Unas palabras (opcional)…"
+              placeholder={ui.replyPlaceholder}
               aria-label="Mensaje de respuesta (opcional)"
               maxLength={280}
               className="h-[46px] w-full rounded-xl border border-[#D6D6DC] bg-[#EBEBEF] px-3.5 text-[15px] outline-none placeholder:text-neutral-400 focus:border-[#E0698F]"
@@ -292,7 +293,7 @@ export function SectionReply({ letterId }: { letterId: string }) {
             </p>
           )}
           <p className="mt-1 flex items-center justify-center gap-1 text-center text-[11px] text-neutral-400">
-            <Send size={10} /> Tu respuesta solo la verá quien te escribió.
+            <Send size={10} />             {ui.replyPrivate}
           </p>
         </>
       )}
@@ -334,7 +335,7 @@ export function SectionVoice({ audio }: { audio: ViewerAudio }) {
 
   return (
     <CardShell>
-      <CardHeader title="Escucha esto" icon="Mic" />
+      <CardHeader title={ui.listenTitle} icon="Mic" />
       <audio ref={audioRef} src={audio.url} preload="metadata" />
       {/* Onda decorativa */}
       <div className="mb-3 flex h-12 items-center justify-center gap-[3px]" aria-hidden>
@@ -355,7 +356,7 @@ export function SectionVoice({ audio }: { audio: ViewerAudio }) {
         <button
           type="button"
           onClick={toggle}
-          aria-label={playing ? "Pausar nota de voz" : "Reproducir nota de voz"}
+          aria-label={playing ? ui.pauseVoice : ui.playVoice}
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-white shadow-lg"
           style={{ background: "var(--brand)" }}
         >
@@ -368,7 +369,7 @@ export function SectionVoice({ audio }: { audio: ViewerAudio }) {
             aria-valuemin={0}
             aria-valuemax={Math.round(dur)}
             aria-valuenow={Math.round(t)}
-            aria-label="Progreso de la nota de voz"
+            aria-label={ui.voiceProgress}
             onClick={(e) => {
               const el = audioRef.current;
               if (!el || !dur) return;

@@ -3,7 +3,7 @@ import type { LetterTemplate } from "./types";
 export const amor: LetterTemplate = {
   id: "amor",
   name: "Carta de amor",
-  emoji: "💌",
+  icon: "Heart",
   tagline: "Para esa persona que te mueve el piso",
   theme: {
     brand: "#D6457F",

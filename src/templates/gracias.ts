@@ -3,7 +3,7 @@ import type { LetterTemplate } from "./types";
 export const gracias: LetterTemplate = {
   id: "gracias",
   name: "Carta de agradecimiento",
-  emoji: "🙏",
+  icon: "Flower2",
   tagline: "Para decirle gracias a quien te sostuvo",
   theme: {
     brand: "#5F7A5E",

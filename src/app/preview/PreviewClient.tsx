@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { LetterViewer } from "@/components/viewer/LetterViewer";
 import type { LetterView } from "@/components/viewer/types";
+import { ui } from "@/templates/ui";
 
 interface PreviewMsg {
   source?: string;
@@ -33,7 +34,7 @@ export default function PreviewClient() {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-[#F4F4F6] p-6 text-center">
         <p className="text-sm font-semibold text-[#6B6B76]">
-          Escribe en el asistente y verás tu carta aquí al instante.
+          {ui.previewEmpty}
         </p>
       </div>
     );

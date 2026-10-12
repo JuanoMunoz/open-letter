@@ -3,7 +3,7 @@ import type { LetterTemplate } from "./types";
 export const cumpleanos: LetterTemplate = {
   id: "cumpleanos",
   name: "Carta de cumpleaños",
-  emoji: "🎂",
+  icon: "Cake",
   tagline: "Una sorpresa para que su día empiece con fiesta",
   theme: {
     brand: "#E8590C",

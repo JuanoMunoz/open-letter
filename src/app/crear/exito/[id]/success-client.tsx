@@ -7,6 +7,7 @@ import { motion } from "motion/react";
 import QRCode from "qrcode";
 import { Copy, Check, Eye, Share2, Trash2, QrCode, Download, MessageCircle, Mail, Inbox } from "lucide-react";
 import { getTemplate } from "@/templates";
+import { ui } from "@/templates/ui";
 
 export default function ExitoPage() {
   const params = useParams<{ id: string }>();
@@ -60,7 +61,7 @@ export default function ExitoPage() {
   const share = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({ title: "Una carta para ti", url: fullUrl });
+        await navigator.share({ title: ui.shareTitle, url: fullUrl });
       } catch { /* cancelado */ }
     } else {
       void copy();
@@ -103,11 +104,19 @@ export default function ExitoPage() {
       ctx.roundRect(W / 2 - 130, 200, 260, 170, 28);
       ctx.fill();
       ctx.fillStyle = "#ffffff";
-      ctx.font = "120px serif";
-      ctx.textAlign = "center";
-      ctx.fillText("♥", W / 2, 330);
+      // Corazón vectorial (sin glifos emoji).
+      ctx.beginPath();
+      ctx.moveTo(W / 2, 350);
+      ctx.bezierCurveTo(W / 2, 322, W / 2 - 90, 296, W / 2 - 90, 262);
+      ctx.bezierCurveTo(W / 2 - 90, 240, W / 2 - 70, 228, W / 2 - 52, 228);
+      ctx.bezierCurveTo(W / 2 - 38, 228, W / 2 - 8, 238, W / 2, 252);
+      ctx.bezierCurveTo(W / 2 + 8, 238, W / 2 + 38, 228, W / 2 + 52, 228);
+      ctx.bezierCurveTo(W / 2 + 70, 228, W / 2 + 90, 240, W / 2 + 90, 262);
+      ctx.bezierCurveTo(W / 2 + 90, 296, W / 2, 322, W / 2, 350);
+      ctx.fill();
       // Nombre
       ctx.fillStyle = "#1c1c22";
+      ctx.textAlign = "center";
       try {
         await document.fonts.load('90px Caveat');
       } catch { /* fallback */ }
@@ -116,8 +125,8 @@ export default function ExitoPage() {
       ctx.fillText(name.length > 18 ? name.slice(0, 18) + "…" : name, W / 2, 560, W - 200);
       ctx.fillStyle = "#6B6B76";
       ctx.font = "600 34px Inter, sans-serif";
-      ctx.fillText("Alguien te escribió algo especial", W / 2, 630);
-      ctx.fillText("con openletter", W / 2, 675);
+      ctx.fillText(ui.giftCardLine1, W / 2, 630);
+      ctx.fillText(ui.giftCardLine2, W / 2, 675);
       // QR
       const qrUrl = await QRCode.toDataURL(fullUrl, { width: 560, margin: 1 });
       const img = new Image();
@@ -134,7 +143,7 @@ export default function ExitoPage() {
       ctx.drawImage(img, W / 2 - QS / 2, 784, QS, QS);
       ctx.fillStyle = "#6B6B76";
       ctx.font = "600 30px Inter, sans-serif";
-      ctx.fillText("Escanea para leerla · vive 7 días", W / 2, 1240);
+      ctx.fillText(ui.scanHint, W / 2, 1240);
       const a = document.createElement("a");
       a.href = canvas.toDataURL("image/png");
       a.download = `openletter-${id}-tarjeta.png`;
@@ -146,11 +155,11 @@ export default function ExitoPage() {
     }
   };
 
-  const waUrl = `https://wa.me/?text=${encodeURIComponent(`Te escribí una carta con openletter 💌 ${fullUrl}`)}`;
-  const mailUrl = `mailto:?subject=${encodeURIComponent("Te escribí una carta")}&body=${encodeURIComponent(`Léela aquí: ${fullUrl}`)}`;
+  const waUrl = `https://wa.me/?text=${encodeURIComponent(ui.shareText(fullUrl))}`;
+  const mailUrl = `mailto:?subject=${encodeURIComponent(ui.giftMailSubject)}&body=${encodeURIComponent(ui.giftMailBody(fullUrl))}`;
 
   const remove = async () => {
-    if (!confirm("¿Eliminar esta carta ahora mismo? No se podrá recuperar.")) return;
+    if (!confirm(ui.deleteConfirm)) return;
     setDeleting(true);
     setDeleteError("");
     try {
@@ -162,10 +171,10 @@ export default function ExitoPage() {
         setDeleted(true);
       } else {
         const data = await res.json().catch(() => ({}));
-        setDeleteError((data as { error?: string }).error ?? "No se pudo eliminar.");
+        setDeleteError((data as { error?: string }).error ?? ui.deleteFailed);
       }
     } catch {
-      setDeleteError("Error de red.");
+      setDeleteError(ui.networkError);
     } finally {
       setDeleting(false);
     }
@@ -191,31 +200,31 @@ export default function ExitoPage() {
           ))}
         </div>
 
-        <h1 className="text-4xl font-light text-neutral-900">Tu carta está <em>lista</em></h1>
-        <p className="mt-2 text-sm text-[#6B6B76]">Compártela con esa persona especial.</p>
+        <h1 className="text-4xl font-light text-neutral-900">{ui.readyTitleA} <em>{ui.readyTitleEm}</em></h1>
+        <p className="mt-2 text-sm text-[#6B6B76]">{ui.readySub}</p>
 
         <div className="mt-6 rounded-3xl border border-[#E4E4E8] bg-white p-5 text-left shadow-sm">
-          <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-[#6B6B76]">Enlace de tu carta</p>
+          <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-[#6B6B76]">{ui.linkTitle}</p>
           <p className="break-all text-sm font-semibold text-neutral-900">{fullUrl || url}</p>
           <div className="mt-4 flex flex-wrap gap-2">
             <button onClick={copy} className="flex items-center gap-1.5 rounded-full bg-neutral-900 px-5 py-2.5 text-sm font-bold text-white">
-              {copied ? <Check size={15} /> : <Copy size={15} />} {copied ? "¡Copiado!" : "Copiar enlace"}
+              {copied ? <Check size={15} /> : <Copy size={15} />} {copied ? ui.copied : ui.copyLink}
             </button>
             <Link href={`/c/${id}`} className="flex items-center gap-1.5 rounded-full border border-[#D6D6DC] bg-white px-5 py-2.5 text-sm font-bold text-neutral-800">
-              <Eye size={15} /> Ver carta
+              <Eye size={15} /> {ui.viewLetter}
             </Link>
             <button onClick={share} className="flex items-center gap-1.5 rounded-full border border-[#D6D6DC] bg-white px-5 py-2.5 text-sm font-bold text-neutral-800">
-              <Share2 size={15} /> Compartir
+              <Share2 size={15} /> {ui.share}
             </button>
             <a href={waUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 rounded-full bg-[#25D366] px-5 py-2.5 text-sm font-bold text-white">
-              <MessageCircle size={15} /> WhatsApp
+              <MessageCircle size={15} /> {ui.whatsapp}
             </a>
             <a href={mailUrl} className="flex items-center gap-1.5 rounded-full border border-[#D6D6DC] bg-white px-5 py-2.5 text-sm font-bold text-neutral-800">
-              <Mail size={15} /> Correo
+              <Mail size={15} /> {ui.email}
             </a>
             {token && (
               <Link href={`/c/${id}/respuestas#token=${token}`} className="flex items-center gap-1.5 rounded-full border border-[#D6D6DC] bg-white px-5 py-2.5 text-sm font-bold text-neutral-800">
-                <Inbox size={15} /> Ver respuestas
+                <Inbox size={15} /> {ui.viewReplies}
               </Link>
             )}
           </div>
@@ -223,11 +232,11 @@ export default function ExitoPage() {
 
         {/* QR + tarjeta */}
         <div className="mt-4 rounded-3xl border border-[#E4E4E8] bg-white p-5 text-left shadow-sm">
-          <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-[#6B6B76]">Código QR</p>
+          <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-[#6B6B76]">{ui.qrTitle}</p>
           <div className="flex items-center gap-4">
             {qr ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={qr} alt="QR del enlace de la carta" className="h-28 w-28 rounded-2xl border border-[#E4E4E8]" />
+              <img src={qr} alt={ui.qrAlt} className="h-28 w-28 rounded-2xl border border-[#E4E4E8]" />
             ) : (
               <span className="flex h-28 w-28 items-center justify-center rounded-2xl bg-[#EBEBEF] text-neutral-400">
                 <QrCode size={28} />
@@ -235,26 +244,26 @@ export default function ExitoPage() {
             )}
             <div className="flex flex-1 flex-col gap-2">
               <button onClick={downloadQr} disabled={!qr} className="flex items-center justify-center gap-1.5 rounded-full border border-[#D6D6DC] bg-white px-4 py-2 text-sm font-bold text-neutral-800 disabled:opacity-40">
-                <Download size={15} /> Descargar QR
+                <Download size={15} /> {ui.downloadQr}
               </button>
               <button onClick={downloadCard} disabled={makingCard} className="flex items-center justify-center gap-1.5 rounded-full bg-neutral-900 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
-                <Download size={15} /> {makingCard ? "Creando…" : "Tarjeta PNG (1080×1350)"}
+                <Download size={15} /> {makingCard ? ui.makingCard : ui.giftCard}
               </button>
             </div>
           </div>
-          <p className="mt-2 text-xs text-[#6B6B76]">La tarjeta sirve para imprimir o mandar por chat.</p>
+          <p className="mt-2 text-xs text-[#6B6B76]">{ui.qrHint}</p>
         </div>
 
         <p className="mt-4 text-xs text-[#6B6B76]">
-          Disponible hasta dentro de 7 días. Después se elimina para siempre.
+          {ui.expiryShort}
         </p>
 
         {token && !deleted && (
           <button onClick={remove} disabled={deleting} className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-neutral-400 hover:text-red-500 disabled:opacity-50">
-            <Trash2 size={13} /> {deleting ? "Eliminando…" : "Eliminar ahora"}
+            <Trash2 size={13} /> {deleting ? ui.deleting : ui.deleteNow}
           </button>
         )}
-        {deleted && <p className="mt-4 text-sm font-bold text-green-600">Carta eliminada para siempre.</p>}
+        {deleted && <p className="mt-4 text-sm font-bold text-green-600">{ui.deleted}</p>}
         {deleteError && <p className="mt-4 text-sm font-semibold text-red-500">{deleteError}</p>}
       </motion.div>
     </div>

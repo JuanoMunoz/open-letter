@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Mic, Square, Play, Pause, Trash2, UploadCloud, AudioLines } from "lucide-react";
+import { ui } from "@/templates/ui";
 import { useUploadThing } from "@/lib/uploadthing-client";
 
 export interface WizardAudio {
@@ -104,7 +105,7 @@ export function VoiceRecorder({
     setError("");
     const mime = pickMime();
     if (!mime) {
-      setError("Tu navegador no permite grabar audio. Sube un archivo.");
+      setError(ui.voiceNoSupport);
       return;
     }
     try {
@@ -144,7 +145,7 @@ export function VoiceRecorder({
         });
       }, 1000);
     } catch {
-      setError("No se pudo acceder al micrófono. Revisa los permisos o sube un archivo.");
+      setError(ui.voiceNoMic);
     }
   };
 
@@ -160,7 +161,7 @@ export function VoiceRecorder({
   const uploadBlob = async (file: File, durationS: number) => {
     setError("");
     if (file.size > MAX_FILE) {
-      setError("El audio supera los 4 MB.");
+      setError(ui.voiceTooBig);
       return;
     }
     setUploading(true);
@@ -173,10 +174,10 @@ export function VoiceRecorder({
         setPreview(null);
         onAudio({ key: up.key, url, durationS, mime: file.type });
       } else {
-        setError("Falló la subida, reintenta.");
+        setError(ui.uploadRetry);
       }
     } catch (e) {
-      setError((e as Error)?.message ?? "Falló la subida.");
+      setError((e as Error)?.message ?? ui.uploadRetry);
     } finally {
       setUploading(false);
     }
@@ -185,7 +186,7 @@ export function VoiceRecorder({
   const onFile = (f: File | undefined) => {
     if (!f) return;
     if (!f.type.startsWith("audio/")) {
-      setError("Solo archivos de audio.");
+      setError(ui.voiceAudioOnly);
       return;
     }
     const url = URL.createObjectURL(f);
@@ -195,14 +196,14 @@ export function VoiceRecorder({
     el.onloadedmetadata = () => {
       const d = Math.round(el.duration || 0);
       if (d > 60) {
-        setError("El audio supera los 60 segundos.");
+        setError(ui.voiceTooLong);
         URL.revokeObjectURL(url);
         return;
       }
       setPreview({ url, durationS: d });
       void uploadBlob(f, d);
     };
-    el.onerror = () => setError("No se pudo leer ese archivo de audio.");
+    el.onerror = () => setError(ui.voiceUnreadable);
   };
 
   const removeAll = async () => {
@@ -230,9 +231,9 @@ export function VoiceRecorder({
         </span>
         <div>
           <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: "var(--brand, #E0698F)" }}>
-            Nota de voz
+            {ui.voiceTitle}
           </p>
-          <p className="text-xs text-[#6B6B76]">Máx. 60 s · se escucha en la carta</p>
+          <p className="text-xs text-[#6B6B76]">{ui.voiceSub}</p>
         </div>
       </div>
 
@@ -243,14 +244,14 @@ export function VoiceRecorder({
             onClick={startRec}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-neutral-900 px-4 py-3 text-sm font-bold text-white"
           >
-            <Mic size={16} /> Grabar
+            <Mic size={16} /> {ui.voiceRecord}
           </button>
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-[#D6D6DC] bg-white px-4 py-3 text-sm font-bold text-neutral-700"
           >
-            <UploadCloud size={16} /> Subir audio
+            <UploadCloud size={16} /> {ui.voiceUpload}
           </button>
           <input
             ref={fileRef}
@@ -269,11 +270,11 @@ export function VoiceRecorder({
         <div className="rounded-2xl bg-neutral-900 p-4 text-white">
           <div className="mb-2 flex items-center gap-2">
             <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
-            <span className="text-sm font-bold tabular-nums">Grabando {fmt(secs)} / 1:00</span>
+            <span className="text-sm font-bold tabular-nums">{ui.voiceRecording(fmt(secs))}</span>
             <button
               type="button"
               onClick={stopRec}
-              aria-label="Detener grabación"
+              aria-label={ui.voiceStop}
               className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-white text-neutral-900"
             >
               <Square size={15} />
@@ -285,7 +286,7 @@ export function VoiceRecorder({
 
       {uploading && (
         <p className="rounded-2xl bg-[#EBEBEF] px-4 py-3 text-sm font-semibold text-[#6B6B76]">
-          Subiendo nota de voz…
+          {ui.voiceUploading}
         </p>
       )}
 
@@ -300,7 +301,7 @@ export function VoiceRecorder({
               else void el.play();
               setPlaying(!playing);
             }}
-            aria-label={playing ? "Pausar" : "Escuchar"}
+            aria-label={playing ? ui.voicePause : ui.voicePlay}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white"
             style={{ background: "var(--brand, #E0698F)" }}
           >
@@ -320,7 +321,7 @@ export function VoiceRecorder({
           <button
             type="button"
             onClick={removeAll}
-            aria-label="Eliminar nota de voz"
+            aria-label={ui.voiceRemove}
             className="ml-auto text-neutral-400 hover:text-red-500"
           >
             <Trash2 size={16} />

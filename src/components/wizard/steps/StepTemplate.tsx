@@ -1,6 +1,8 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { TemplateIcon } from "@/components/TemplateIcon";
+import { ui } from "@/templates/ui";
 import type { LetterTemplate } from "@/templates/types";
 
 /** Paso 0: selector de plantilla. */
@@ -16,10 +18,11 @@ export function StepTemplate({
   return (
     <div>
       <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.2em] text-[#6B6B76]">
-        Elige la plantilla
+        {ui.chooseTemplate}
       </p>
       <h1 className="font-editorial mb-6 text-[42px] leading-[1.05] text-neutral-900 sm:text-[60px]">
-        ¿Qué quieres <em>celebrar</em>?
+        {ui.whatToCelebrateA} <em>{ui.whatToCelebrateEm}</em>
+        {ui.whatToCelebrateB}
       </h1>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {allTemplates.map((t) => {
@@ -44,12 +47,14 @@ export function StepTemplate({
                   <span style={{ color: t.theme.brand }}>● ● ●</span>
                 </span>
               </span>
-              <span className="text-2xl">{t.emoji}</span>
-              <span className="mt-1 block text-[15px] font-bold text-neutral-900">{t.name}</span>
+              <span className="flex items-center gap-2">
+                <TemplateIcon icon={t.icon} brand={t.theme.brand} box={40} size={20} />
+                <span className="mt-1 block text-[15px] font-bold text-neutral-900">{t.name}</span>
+              </span>
               <span className="block text-xs leading-snug text-[#6B6B76]">{t.tagline}</span>
               {selected && (
                 <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold" style={{ color: t.theme.brand }}>
-                  <Check size={13} /> Elegida
+                  <Check size={13} /> {ui.chosen}
                 </span>
               )}
             </button>

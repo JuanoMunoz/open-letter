@@ -4,6 +4,7 @@ import { getDb, clientIp } from "@/db";
 import { letters, assets } from "@/db/schema";
 import { createLetterSchema } from "@/lib/schemas";
 import { hashPassword } from "@/lib/password";
+import { ui } from "@/templates/ui";
 import { newLetterId, newManageToken, sha256Hex, hashIp } from "@/lib/ids";
 import { expiresAtFromNow } from "@/lib/expiry";
 import { LIMITS, countRecentEvents, recordEvent, isOwnedUpload } from "@/lib/ratelimit";
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Clave de archivo inválida" }, { status: 400 });
     }
     if (a.kind === "audio" && a.durationS != null && a.durationS > 60) {
-      return NextResponse.json({ error: "La nota de voz supera los 60 segundos" }, { status: 400 });
+      return NextResponse.json({ error: ui.voiceTooLong }, { status: 400 });
     }
   }
 

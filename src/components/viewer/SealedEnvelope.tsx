@@ -59,8 +59,17 @@ function makeCardTexture(name: string, brand: string, font: string): THREE.Canva
   ctx.font = `600 84px "${font}", cursive`;
   const short = name.length > 14 ? name.slice(0, 14) + "…" : name;
   ctx.fillText(short, 256, 168);
-  ctx.font = "44px serif";
-  ctx.fillText("♥", 256, 232);
+  // Corazón vectorial (sin glifos emoji).
+  ctx.fillStyle = brand;
+  ctx.beginPath();
+  ctx.moveTo(256, 248);
+  ctx.bezierCurveTo(256, 238, 236, 228, 236, 214);
+  ctx.bezierCurveTo(236, 206, 242, 201, 248, 201);
+  ctx.bezierCurveTo(251, 201, 254, 203, 256, 207);
+  ctx.bezierCurveTo(258, 203, 261, 201, 264, 201);
+  ctx.bezierCurveTo(270, 201, 276, 206, 276, 214);
+  ctx.bezierCurveTo(276, 228, 256, 238, 256, 248);
+  ctx.fill();
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;

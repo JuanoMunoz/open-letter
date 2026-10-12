@@ -9,6 +9,7 @@ import { SealedEnvelope } from "./SealedEnvelope";
 import { BrandMark } from "@/components/BrandMark";
 import { getTemplate, resolveTheme, themeVars, scriptFamily } from "@/templates";
 import type { ParticleKind } from "@/templates/types";
+import { ui } from "@/templates/ui";
 import {
   SectionCover,
   SectionMessage,
@@ -299,7 +300,7 @@ export function LetterViewer({ letter, preview = false, scrollSignal = null }: {
               {template.closingLine}
             </p>
             <p className="px-8 text-center text-[11px] text-neutral-500/80">
-              Disponible hasta {formatExpiry(letter.expiresAt)} · {template.footerSuffix}
+              {ui.availableUntil(formatExpiry(letter.expiresAt))} · {template.footerSuffix}
             </p>
             <BrandMark />
           </div>

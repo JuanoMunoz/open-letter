@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus, X, GripVertical } from "lucide-react";
+import { ui } from "@/templates/ui";
 
 export interface OpenPair {
   when: string;
@@ -50,8 +51,8 @@ export function ItemsEditor({
                   next[i] = { ...next[i], when: e.target.value.slice(0, 80) };
                   onPairs(next);
                 }}
-                placeholder="…tengas un mal día"
-                aria-label={`Condición ${i + 1}`}
+                placeholder={ui.pairWhenPh}
+                aria-label={ui.pairWhen(i + 1)}
                 className="w-full bg-transparent text-sm font-bold text-neutral-800 outline-none placeholder:text-neutral-400"
               />
               <input
@@ -61,15 +62,15 @@ export function ItemsEditor({
                   next[i] = { ...next[i], text: e.target.value.slice(0, 280) };
                   onPairs(next);
                 }}
-                placeholder="Lo que quieres decirle entonces…"
-                aria-label={`Mensaje ${i + 1}`}
+                placeholder={ui.pairSayPh}
+                aria-label={ui.pairSay(i + 1)}
                 className="mt-0.5 w-full bg-transparent text-sm text-neutral-600 outline-none placeholder:text-neutral-400"
               />
             </div>
             <button
               type="button"
               onClick={() => onPairs(pairs.filter((_, ix) => ix !== i))}
-              aria-label={`Quitar mini carta ${i + 1}`}
+              aria-label={ui.pairRemove(i + 1)}
               className="text-neutral-400 hover:text-red-500"
             >
               <X size={15} />
@@ -81,16 +82,16 @@ export function ItemsEditor({
             <input
               value={draftWhen}
               onChange={(e) => setDraftWhen(e.target.value)}
-              placeholder="…tengas un mal día"
-              aria-label="Nueva condición"
+              placeholder={ui.pairWhenPh}
+              aria-label={ui.pairNewWhen}
               className="w-full bg-transparent text-sm font-bold outline-none placeholder:text-neutral-400"
             />
             <input
               value={draftText}
               onChange={(e) => setDraftText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addPair()}
-              placeholder="Mensaje para ese momento… (Enter para añadir)"
-              aria-label="Nuevo mensaje"
+              placeholder={ui.pairNewTextPh}
+              aria-label={ui.pairNewText}
               className="mt-1 w-full bg-transparent text-sm outline-none placeholder:text-neutral-400"
             />
             <button
@@ -99,7 +100,7 @@ export function ItemsEditor({
               disabled={!draftWhen.trim()}
               className="mt-1.5 flex items-center gap-1 text-xs font-bold text-[#E0698F] disabled:opacity-40"
             >
-              <Plus size={13} /> Añadir mini carta ({pairs.length}/5)
+              <Plus size={13} /> {ui.pairAdd(pairs.length)}
             </button>
           </div>
         )}
@@ -129,13 +130,13 @@ export function ItemsEditor({
                   next[i] = e.target.value.slice(0, 140);
                   onItems(next);
                 }}
-                aria-label={`Ítem ${i + 1}`}
+                aria-label={ui.itemLabel(i + 1)}
                 className="w-full bg-transparent outline-none"
               />
               <button
                 type="button"
                 onClick={() => onItems(items.filter((_, ix) => ix !== i))}
-                aria-label={`Quitar ítem ${i + 1}`}
+                aria-label={ui.itemRemove(i + 1)}
                 className="shrink-0 text-neutral-400 hover:text-red-500"
               >
                 <X size={15} />
@@ -151,7 +152,7 @@ export function ItemsEditor({
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addItem())}
             placeholder={placeholder}
-            aria-label="Nuevo ítem"
+            aria-label={ui.itemNew}
             maxLength={140}
             className="w-full rounded-xl border border-[#D6D6DC] bg-[#EBEBEF] px-3 py-2.5 text-[15px] outline-none placeholder:text-neutral-400 focus:border-[#E0698F]"
           />
@@ -159,7 +160,7 @@ export function ItemsEditor({
             type="button"
             onClick={addItem}
             disabled={!draft.trim()}
-            aria-label="Añadir ítem"
+            aria-label={ui.itemAdd}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-white disabled:opacity-40"
           >
             <Plus size={16} />

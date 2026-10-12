@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ui } from "@/templates/ui";
 import { getTemplate } from "@/templates";
 
 const t = getTemplate("amor");
@@ -13,7 +14,7 @@ export default function CartaNotFound() {
         href="/crear"
         className="mt-6 rounded-full bg-neutral-900 px-7 py-3 text-sm font-bold text-white"
       >
-        Crear carta →
+        {ui.ctaCreate}
       </Link>
     </div>
   );

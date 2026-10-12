@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Maximize2, X } from "lucide-react";
 import { FieldCounter, FieldLabel } from "./FieldCounter";
+import { ui } from "@/templates/ui";
 
 export function ExpandModalEditor({
   label,
@@ -25,7 +26,7 @@ export function ExpandModalEditor({
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label={`Editar ${label}`}
+          aria-label={ui.editField(label)}
     >
       <div
         className="flex max-h-[85dvh] w-full max-w-2xl flex-col rounded-3xl bg-white p-5 shadow-2xl"
@@ -36,7 +37,7 @@ export function ExpandModalEditor({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Cerrar"
+            aria-label={ui.close}
             className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EBEBEF] text-neutral-600 hover:text-neutral-900"
           >
             <X size={16} />
@@ -56,7 +57,7 @@ export function ExpandModalEditor({
             onClick={onSave}
             className="rounded-full bg-neutral-900 px-6 py-2.5 text-sm font-bold text-white"
           >
-            Guardar
+            {ui.save}
           </button>
         </div>
       </div>
@@ -110,7 +111,7 @@ export function ExpandableTextarea({
         <button
           type="button"
           onClick={openModal}
-          aria-label={`Expandir ${label}`}
+          aria-label={ui.expandField(label)}
           className="absolute right-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-white text-neutral-500 shadow-sm transition hover:text-[#E0698F]"
         >
           <Maximize2 size={14} />

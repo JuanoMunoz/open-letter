@@ -10,6 +10,7 @@ import { formatLongDate, daysTogetherCount } from "@/lib/dates";
 import { spotifyEmbedUrl } from "@/lib/spotify";
 import type { LetterView, ViewerPhoto } from "./types";
 import type { LetterTemplate, SectionDef } from "@/templates/types";
+import { ui } from "@/templates/ui";
 
 /* ---------- Polaroid que asoma en la esquina superior izquierda ---------- */
 
@@ -112,7 +113,7 @@ export function SectionMessage({ letter, active }: { letter: LetterView; active:
         )}
         <button
           onClick={() => setOpen(true)}
-          aria-label="Leer mensaje completo"
+          aria-label={ui.readFull("mensaje")}
           className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-neutral-500 shadow"
         >
           <Maximize2 size={14} />
@@ -154,7 +155,7 @@ export function SectionCard({
       >
         <button
           onClick={() => setOpen(true)}
-          aria-label={`Leer ${title} completo`}
+          aria-label={ui.readFull(title)}
           className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-white text-neutral-400 shadow-sm"
         >
           <Maximize2 size={13} />
@@ -304,7 +305,7 @@ export function SectionSong({ letter, template, active, backgroundLive, onPauseB
           <h3 className="font-letter text-[30px] font-semibold text-neutral-900">{template.songTitle}</h3>
           <button
             onClick={() => setOpen(true)}
-            aria-label="Ampliar canción"
+            aria-label={ui.songExpand}
             className="ml-auto flex h-7 w-7 items-center justify-center rounded-full bg-white text-neutral-400 shadow-sm"
           >
             <Maximize2 size={13} />
@@ -321,11 +322,11 @@ export function SectionSong({ letter, template, active, backgroundLive, onPauseB
                 />
               ))}
             </span>
-            <p className="flex-1 text-sm font-bold text-neutral-800">Sonando de fondo…</p>
+            <p className="flex-1 text-sm font-bold text-neutral-800">{ui.nowPlaying}</p>
             <button
               type="button"
               onClick={onPauseBackground}
-              aria-label="Pausar música de fondo"
+              aria-label={ui.pauseSong}
               className="flex h-9 w-9 items-center justify-center rounded-full text-white"
               style={{ background: "var(--brand)" }}
             >
@@ -340,17 +341,17 @@ export function SectionSong({ letter, template, active, backgroundLive, onPauseB
             style={{ borderRadius: 12, border: 0 }}
             allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
             loading="lazy"
-            title="Canción de Spotify"
+            title={ui.songFrameTitle}
           />
         ) : (
           <div className="flex h-[152px] items-center justify-center rounded-xl bg-[#FBE4EC] text-sm font-semibold text-[#D6457F]">
-            Cargando canción…
+            {ui.songLoading}
           </div>
         )}
       </div>
       <AnimatePresence>
         {open && (
-          <ExpandModal title="Nuestra Canción" text={`open.spotify.com/track/${letter.spotifyTrackId}`} onClose={() => setOpen(false)} />
+          <ExpandModal title={template.songTitle} text={`open.spotify.com/track/${letter.spotifyTrackId}`} onClose={() => setOpen(false)} />
         )}
       </AnimatePresence>
     </div>

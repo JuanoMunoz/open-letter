@@ -94,7 +94,8 @@ export interface CoverCopy {
 export interface LetterTemplate {
   id: "amor" | "aniversario" | "cumpleanos" | "amistad" | "gracias" | "perdon";
   name: string;
-  emoji: string;
+  /** Nombre de icono lucide para el selector (sin emojis). */
+  icon: string;
   tagline: string;
   theme: TemplateTheme;
   particles: ParticleKind;

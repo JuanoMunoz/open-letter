@@ -8,6 +8,7 @@ import { es } from "date-fns/locale";
 import { Eye, Clock, Trash2, Inbox } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { formatExpiry } from "@/lib/dates";
+import { ui } from "@/templates/ui";
 
 interface Reply {
   id: string;
@@ -42,7 +43,7 @@ export default function RespuestasPage() {
     fetch(`/api/cartas/${id}/respuestas`, { headers: { "x-manage-token": token } })
       .then(async (res) => {
         if (!res.ok) {
-          setError(res.status === 403 ? "Token inválido." : "No se pudo cargar.");
+          setError(res.status === 403 ? ui.panelBadToken : ui.panelLoadFail);
           setLoading(false);
           return;
         }
@@ -50,7 +51,7 @@ export default function RespuestasPage() {
         setLoading(false);
       })
       .catch(() => {
-        setError("Error de red.");
+        setError(ui.networkError);
         setLoading(false);
       });
   }, [id, token]);
@@ -60,18 +61,18 @@ export default function RespuestasPage() {
       <div className="mx-auto w-full max-w-[560px]">
         <BrandMark />
         <h1 className="font-editorial mt-4 text-[36px] leading-tight text-neutral-900">
-          Respuestas <em>recibidas</em>
+          {ui.panelTitleA} <em>{ui.panelTitleEm}</em>
         </h1>
 
-        {loading && <p className="mt-6 text-sm text-[#6B6B76]">Cargando…</p>}
+        {loading && <p className="mt-6 text-sm text-[#6B6B76]">{ui.panelLoading}</p>}
         {!loading && token === null && (
           <div className="mt-6 rounded-3xl border border-[#E4E4E8] bg-white p-6 text-center">
-            <p className="text-2xl font-bold">403</p>
+            <p className="text-2xl font-bold">{ui.panelNoTokenTitle}</p>
             <p className="mt-1 text-sm text-[#6B6B76]">
-              Esta pantalla es solo para quien creó la carta. Abre el enlace de tu pantalla de éxito (lleva tu llave).
+              {ui.panelNoTokenBody}
             </p>
             <Link href="/" className="mt-4 inline-block rounded-full bg-neutral-900 px-6 py-2.5 text-sm font-bold text-white">
-              Ir al inicio
+              {ui.panelHome}
             </Link>
           </div>
         )}
@@ -86,36 +87,36 @@ export default function RespuestasPage() {
               <div className="rounded-2xl border border-[#E4E4E8] bg-white p-3 text-center">
                 <Eye size={16} className="mx-auto text-[#6B6B76]" />
                 <p className="mt-1 text-xl font-bold">{panel.viewCount}</p>
-                <p className="text-[11px] text-[#6B6B76]">aperturas</p>
+                <p className="text-[11px] text-[#6B6B76]">{ui.statViews}</p>
               </div>
               <div className="rounded-2xl border border-[#E4E4E8] bg-white p-3 text-center">
                 <Inbox size={16} className="mx-auto text-[#6B6B76]" />
                 <p className="mt-1 text-xl font-bold">{panel.replies.length}</p>
-                <p className="text-[11px] text-[#6B6B76]">respuestas</p>
+                <p className="text-[11px] text-[#6B6B76]">{ui.statReplies}</p>
               </div>
               <div className="rounded-2xl border border-[#E4E4E8] bg-white p-3 text-center">
                 <Clock size={16} className="mx-auto text-[#6B6B76]" />
                 <p className="mt-1 text-[13px] font-bold leading-tight">
                   {format(new Date(panel.expiresAt), "d MMM", { locale: es })}
                 </p>
-                <p className="text-[11px] text-[#6B6B76]">caduca</p>
+                <p className="text-[11px] text-[#6B6B76]">{ui.statExpiry}</p>
               </div>
             </div>
             {panel.lastViewedAt && (
               <p className="mt-2 text-center text-xs text-[#6B6B76]">
-                Última apertura: {format(new Date(panel.lastViewedAt), "d 'de' MMMM, HH:mm", { locale: es })}
+                {ui.lastView(format(new Date(panel.lastViewedAt), "d 'de' MMMM, HH:mm", { locale: es }))}
               </p>
             )}
             <p className="mt-2 text-center text-xs text-[#6B6B76]">
-              Disponible hasta {formatExpiry(panel.expiresAt)} · luego se elimina todo para siempre.
+              {ui.availableUntil(formatExpiry(panel.expiresAt))} · luego se elimina todo para siempre.
             </p>
 
             <h2 className="mb-2 mt-6 text-[11px] font-bold uppercase tracking-wide text-[#6B6B76]">
-              Para {panel.recipientName}
+              {ui.panelFor(panel.recipientName)}
             </h2>
             {panel.replies.length === 0 ? (
               <p className="rounded-2xl border border-dashed border-[#D6D6DC] bg-white/60 px-4 py-6 text-center text-sm text-[#6B6B76]">
-                Aún no hay respuestas. Cuando esa persona reaccione, aparecerán aquí.
+                {ui.panelEmpty}
               </p>
             ) : (
               <ul className="space-y-2">
@@ -135,7 +136,7 @@ export default function RespuestasPage() {
 
             <div className="mt-6 flex gap-2">
               <Link href={`/c/${id}`} className="flex-1 rounded-full border border-[#D6D6DC] bg-white px-5 py-3 text-center text-sm font-bold">
-                Ver carta
+                {ui.viewLetter}
               </Link>
               <DeleteButton id={id} token={token ?? ""} />
             </div>
@@ -150,7 +151,7 @@ function DeleteButton({ id, token }: { id: string; token: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const remove = async () => {
-    if (!confirm("¿Eliminar esta carta ahora mismo? Se borra todo para siempre.")) return;
+    if (!confirm(ui.deleteConfirm)) return;
     setBusy(true);
     await fetch(`/api/cartas/${id}`, { method: "DELETE", headers: { "x-manage-token": token } });
     router.push("/");
@@ -162,7 +163,7 @@ function DeleteButton({ id, token }: { id: string; token: string }) {
       disabled={busy}
       className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-red-500 px-5 py-3 text-sm font-bold text-white disabled:opacity-50"
     >
-      <Trash2 size={15} /> {busy ? "Eliminando…" : "Eliminar"}
+      <Trash2 size={15} /> {busy ? ui.deleting : ui.panelDelete}
     </button>
   );
 }

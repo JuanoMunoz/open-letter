@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus, X, CalendarDays } from "lucide-react";
+import { ui } from "@/templates/ui";
 import type { WizardPhoto } from "./PhotoUploader";
 
 export interface WizardMilestone {
@@ -20,7 +21,7 @@ export function emptyMilestone(): WizardMilestone {
   return { uid: newUid(), date: "", title: "", body: "" };
 }
 
-/** Línea de tiempo: hasta 8 hitos con fecha, título, texto y foto opcional. */
+/** Línea de tiempo del wizard (textos en el copy compartido). */
 export function TimelineEditor({
   milestones,
   onChange,
@@ -43,9 +44,9 @@ export function TimelineEditor({
         </span>
         <div>
           <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: "var(--brand, #E0698F)" }}>
-            Línea de tiempo
+            {ui.timelineTitle}
           </p>
-          <p className="text-xs text-[#6B6B76]">{milestones.length}/8 hitos · en la carta se dibuja un hilo</p>
+          <p className="text-xs text-[#6B6B76]">{ui.timelineSub(milestones.length)}</p>
         </div>
       </div>
 
@@ -61,14 +62,14 @@ export function TimelineEditor({
                   type="date"
                   value={m.date}
                   onChange={(e) => patch(m.uid, { date: e.target.value })}
-                  aria-label={`Fecha del hito ${i + 1} (opcional)`}
+                  aria-label={ui.milestoneDate(i + 1)}
                   lang="es"
                   className="rounded-lg border border-[#D6D6DC] bg-[#EBEBEF] px-2 py-1 text-xs"
                 />
                 <button
                   type="button"
                   onClick={() => onChange(milestones.filter((x) => x.uid !== m.uid))}
-                  aria-label={`Quitar hito ${i + 1}`}
+                  aria-label={ui.milestoneRemove(i + 1)}
                   className="ml-auto text-neutral-400 hover:text-red-500"
                 >
                   <X size={15} />
@@ -77,16 +78,16 @@ export function TimelineEditor({
               <input
                 value={m.title}
                 onChange={(e) => patch(m.uid, { title: e.target.value.slice(0, 60) })}
-                placeholder="Título del momento…"
-                aria-label={`Título del hito ${i + 1}`}
+                placeholder={ui.milestoneTitlePh}
+                aria-label={ui.milestoneTitle(i + 1)}
                 maxLength={60}
                 className="w-full rounded-xl border border-[#D6D6DC] bg-[#EBEBEF] px-3 py-2 text-[15px] font-bold outline-none placeholder:font-normal placeholder:text-neutral-400 focus:border-[#E0698F]"
               />
               <textarea
                 value={m.body}
                 onChange={(e) => patch(m.uid, { body: e.target.value.slice(0, 200) })}
-                placeholder="Cuéntalo en dos líneas… (opcional)"
-                aria-label={`Texto del hito ${i + 1}`}
+                placeholder={ui.milestoneBodyPh}
+                aria-label={ui.milestoneBody(i + 1)}
                 rows={2}
                 maxLength={200}
                 className="mt-1.5 w-full resize-y rounded-xl border border-[#D6D6DC] bg-[#EBEBEF] px-3 py-2 text-sm outline-none placeholder:text-neutral-400 focus:border-[#E0698F]"
@@ -99,7 +100,7 @@ export function TimelineEditor({
                     aria-pressed={!m.assetKey}
                     className={`shrink-0 rounded-lg px-2 py-1 text-xs font-bold ${!m.assetKey ? "bg-neutral-900 text-white" : "bg-[#EBEBEF] text-neutral-500"}`}
                   >
-                    Sin foto
+                    {ui.milestoneNoPhoto}
                   </button>
                   {readyPhotos.map((p) => (
                     <button
@@ -107,7 +108,7 @@ export function TimelineEditor({
                       type="button"
                       onClick={() => patch(m.uid, { assetKey: p.key })}
                       aria-pressed={m.assetKey === p.key}
-                      aria-label={`Foto ${readyPhotos.indexOf(p) + 1} para el hito ${i + 1}`}
+                      aria-label={ui.milestonePhoto(readyPhotos.indexOf(p) + 1, i + 1)}
                       className={`h-11 w-11 shrink-0 overflow-hidden rounded-lg border-2 transition ${m.assetKey === p.key ? "border-[#E0698F]" : "border-transparent"}`}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -127,10 +128,10 @@ export function TimelineEditor({
           onClick={() => onChange([...milestones, emptyMilestone()])}
           className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#D6D6DC] px-4 py-3 text-sm font-bold text-neutral-600 transition hover:border-[#E0698F]"
         >
-          <Plus size={16} /> Añadir hito ({milestones.length}/8)
+          <Plus size={16} /> {ui.milestoneAdd(milestones.length)}
         </button>
       ) : (
-        <p className="mt-2 text-xs font-semibold text-[#6B6B76]">Máximo 8 hitos por carta.</p>
+        <p className="mt-2 text-xs font-semibold text-[#6B6B76]">{ui.milestoneMax}</p>
       )}
     </div>
   );

@@ -2,6 +2,9 @@ import {
   BadgeCheck,
   BookOpen,
   Cake,
+  Bird,
+  Flower2,
+  Gem,
   Gift,
   Heart,
   HeartCrack,
@@ -16,6 +19,7 @@ import {
   Sparkles,
   Star,
   Sunrise,
+  Users,
   GripVertical,
   type LucideIcon,
 } from "lucide-react";
@@ -25,6 +29,9 @@ export const SECTION_ICONS: Record<string, LucideIcon> = {
   BadgeCheck,
   BookOpen,
   Cake,
+  Bird,
+  Flower2,
+  Gem,
   Gift,
   GripVertical,
   Heart,
@@ -40,6 +47,7 @@ export const SECTION_ICONS: Record<string, LucideIcon> = {
   Sparkles,
   Star,
   Sunrise,
+  Users,
 };
 
 export function sectionIcon(name: string): LucideIcon {

@@ -6,6 +6,7 @@ import { letters } from "@/db/schema";
 import { hashIp } from "@/lib/ids";
 import { verifyPassword, signAccessCookie, accessCookieName } from "@/lib/password";
 import { LIMITS, countRecentEvents, recordEvent } from "@/lib/ratelimit";
+import { ui } from "@/templates/ui";
 
 const bodySchema = z.object({ password: z.string().min(1).max(128) });
 
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
       await recordEvent(ipHash, "password", id);
     } catch { /* noop */ }
     // Respuesta genérica para no filtrar si el id existe (ya 404 arriba) ni pistas.
-    return NextResponse.json({ error: "Palabra secreta incorrecta." }, { status: 403 });
+    return NextResponse.json({ error: ui.wrongSecret }, { status: 403 });
   }
 
   const exp = Math.floor(Date.now() / 1000) + 24 * 3600;

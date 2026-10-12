@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Play, Pause, Music2 } from "lucide-react";
+import { ui } from "@/templates/ui";
 
 type MusicStatus = "idle" | "ready" | "playing" | "paused" | "blocked";
 
@@ -191,7 +192,7 @@ export function SongPlayer({
         <button
           type="button"
           onClick={tap}
-          aria-label={status === "playing" ? "Pausar música" : "Poner música"}
+          aria-label={status === "playing" ? ui.pauseMusic : ui.playMusic}
           className="flex items-center gap-2 rounded-full bg-black/55 py-2.5 pl-4 pr-5 text-sm font-bold text-white shadow-xl backdrop-blur transition hover:bg-black/70"
         >
           {status === "playing" ? (
@@ -206,16 +207,16 @@ export function SongPlayer({
                 ))}
               </span>
               <style>{`@keyframes musicbar { from { transform: scaleY(0.35); } to { transform: scaleY(1); } }`}</style>
-              Sonando
+              {ui.sounding}
               <Pause size={15} />
             </>
           ) : status === "blocked" ? (
             <>
-              <Play size={15} /> Poner música
+              <Play size={15} /> {ui.playMusic}
             </>
           ) : (
             <>
-              <Music2 size={15} /> Reanudar
+              <Music2 size={15} /> {ui.resumeMusic}
             </>
           )}
         </button>

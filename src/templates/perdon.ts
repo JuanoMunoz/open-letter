@@ -3,7 +3,7 @@ import type { LetterTemplate } from "./types";
 export const perdon: LetterTemplate = {
   id: "perdon",
   name: "Carta para pedir perdón",
-  emoji: "🕊️",
+  icon: "Bird",
   tagline: "Para decir lo siento con calma y honestidad",
   theme: {
     brand: "#4A5A6A",

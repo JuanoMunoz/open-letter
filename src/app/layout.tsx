@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Caveat, Fraunces, Kalam, Dancing_Script } from "next/font/google";
+import { ui } from "@/templates/ui";
 import "../styles/globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -9,9 +10,8 @@ const kalam = Kalam({ subsets: ["latin"], variable: "--font-kalam", weight: ["30
 const dancing = Dancing_Script({ subsets: ["latin"], variable: "--font-dancing", weight: ["500", "600", "700"], display: "swap" });
 
 export const metadata: Metadata = {
-  title: "openletter — cartas digitales que duran una semana",
-  description:
-    "Crea una carta digital romántica con formato story, fotos y canción. Disponible 7 días y luego se elimina para siempre.",
+  title: ui.seoTitle,
+  description: ui.seoDescription,
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
 };
 

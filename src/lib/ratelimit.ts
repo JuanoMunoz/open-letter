@@ -44,6 +44,5 @@ export const LIMITS = {
   uploadsPerHourPerIp: 40,
   lettersPerDayPerIp: 5,
   repliesPerIpPerLetter: 5,
-  aiPerHourPerIp: 10,
   passwordAttemptsPer15m: 5,
 } as const;

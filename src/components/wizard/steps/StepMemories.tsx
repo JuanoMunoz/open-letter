@@ -4,6 +4,7 @@ import { PhotoUploader, type WizardPhoto } from "../PhotoUploader";
 import { SpotifyField } from "../SpotifyField";
 import { TimelineEditor, type WizardMilestone } from "../TimelineEditor";
 import { VoiceRecorder, type WizardAudio } from "../VoiceRecorder";
+import { ui } from "@/templates/ui";
 import type { LetterTemplate } from "@/templates/types";
 
 /** Paso 3: recuerdos (fotos, hitos, voz y canción). */
@@ -47,8 +48,8 @@ export function StepMemories({
       <VoiceRecorder audio={audio} onAudio={setAudio} onBusy={onAudioBusy} />
       <hr className="border-[#E4E4E8]" />
       <SpotifyField value={spotifyUrl} onChange={setSpotifyUrl} />
-      {uploading && <p className="text-xs font-semibold text-[#6B6B76]">Subiendo fotos… el botón se activará al terminar.</p>}
-      {failedUpload && <p className="text-xs font-semibold text-red-500">Una foto falló al subir. Elimínala o reintenta.</p>}
+      {uploading && <p className="text-xs font-semibold text-[#6B6B76]">{ui.uploadingPhotos}</p>}
+      {failedUpload && <p className="text-xs font-semibold text-red-500">{ui.uploadFailed}</p>}
     </div>
   );
 }

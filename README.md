@@ -1,28 +1,37 @@
-# openletter 💌
+# openletter
 
-Cartas digitales románticas con formato *story* vertical: máquina de escribir,
-partículas flotantes, fotos y canción de Spotify. Cada carta recibe un enlace
-público único (`/c/[id]`) que **vive exactamente 7 días** y luego se elimina
-para siempre (de Neon **y** de UploadThing).
+Cartas digitales con formato *story* vertical: eliges una **plantilla**
+(amor, aniversario, cumpleaños, amistad, gracias, perdón), escribes por
+secciones con ayuda de arranques, sumas fotos, hitos, nota de voz y canción,
+y la compartes con un **enlace único** (`/c/[id]`) que **vive 7 días** y luego
+se elimina para siempre (de Neon **y** de UploadThing). El destinatario puede
+responder con reacciones, y la apertura es un ritual: sobre sellado 3D que se
+abre entre 1 y 13 toques.
+
+Sin IA: no hay ninguna función de inteligencia artificial en la app.
+Sin emojis-icono: los iconos son lucide (las reacciones del destinatario son
+la única excepción, a petición explícita).
 
 ## Stack
 
 Next.js 16 (App Router, TypeScript estricto) · Tailwind CSS 4 · `motion` ·
-Neon Postgres (`@neondatabase/serverless`) · Drizzle ORM · UploadThing v7 ·
-zod · nanoid · lucide-react · react-hook-form · date-fns (locale `es`) ·
-Inter + Caveat (`next/font/google`) · Vercel (+ Cron).
+`three` (sobre de apertura) · Neon Postgres (`@neondatabase/serverless`) ·
+Drizzle ORM · UploadThing v7 · zod · nanoid · `lucide-react` · `date-fns`
+(locale `es`) · `dnd-kit` (reordenar secciones) · `qrcode` · Inter + Fraunces
++ Caveat/Kalam/Dancing Script (`next/font/google`) · Vercel (+ Cron).
 
 ## Correr en local
 
 ```bash
 cp .env.example .env   # completa las variables (ver abajo)
 npm install
-npm run db:migrate      # crea letters, photos, rate_events (requiere DATABASE_URL)
+npm run db:migrate      # esquema + backfills (requiere DATABASE_URL)
 npm run dev             # http://localhost:3000
 ```
 
-Sin `.env` la app **arranca igual** en modo degradado: `/` y `/crear` (interfaz)
-funcionan; crear cartas, verlas y subir fotos requieren Neon + UploadThing reales.
+Sin `.env` la app **arranca igual** en modo degradado: `/` y `/crear`
+(interfaz) funcionan; crear cartas, verlas y subir archivos requieren Neon +
+UploadThing reales.
 
 ## Variables de entorno
 
@@ -35,181 +44,158 @@ funcionan; crear cartas, verlas y subir fotos requieren Neon + UploadThing reale
 | `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` en local, dominio final en Vercel. |
 | `LETTER_TTL_DAYS` | `7` por defecto. |
 | `IP_HASH_SALT` | `openssl rand -hex 16`. Las IPs solo se guardan hasheadas (SHA-256). |
+| `LETTER_COOKIE_SECRET` | `openssl rand -hex 32`. Firma HMAC de cookies de acceso (cartas con contraseña). Sin esto, el unlock responde 503. |
+| `MAX_SCHEDULE_DAYS` | Reservada (programación P2). Default `14`. |
 
 `src/lib/env.ts` valida con zod y falla al arrancar con mensaje claro si falta
 algo (en `next build` usa dummies para no bloquear el deploy).
 
-## Neon y UploadThing
+## Plantillas
 
-- **Neon:** crea el proyecto (o usa la integración Neon del Vercel
-  Marketplace, que inyecta `DATABASE_URL`/`DATABASE_URL_UNPOOLED`).
-  `npm run db:migrate` ejecuta el DDL idempotente de `scripts/migrate.ts`;
-  `drizzle/` contiene además la migración generada con `drizzle-kit generate`.
-- **UploadThing:** crea una app en uploadthing.com y copia `UPLOADTHING_TOKEN`.
-  El `FileRouter` (`letterImage`: solo imágenes, 8 MB, máx. 10) limita a
-  **40 subidas/IP/hora** y registra eventos en `rate_events`. El navegador
-  comprime a máx. 1920 px (canvas, JPEG/WebP 0.85) antes de subir; los archivos
-  van directo del navegador a UploadThing, nunca por Vercel (límite 4.5 MB).
+`src/templates/` (tipos en `types.ts`, copy compartido en `ui.ts`):
 
-## Despliegue en Vercel
+| Plantilla | Tema | Partículas | Apertura |
+|---|---|---|---|
+| Amor (`amor`) | rosa | pétalos | sobre |
+| Aniversario (`aniversario`) | borgoña y crema | corazones | sobre |
+| Cumpleaños (`cumpleanos`) | coral | confeti | sobre (regalo: P2) |
+| Amistad (`amistad`) | turquesa y arena | estrellas | directa |
+| Gracias (`gracias`) | salvia y marfil | pétalos | sobre |
+| Perdón (`perdon`) | pizarra y perla | nieve | directa |
 
-1. Sube a GitHub e importa en Vercel (Next.js autodetectado).
-2. Conecta Neon (Marketplace) y define `UPLOADTHING_TOKEN`, `CRON_SECRET`,
-   `NEXT_PUBLIC_APP_URL`, `LETTER_TTL_DAYS`, `IP_HASH_SALT`.
-3. Build command: `npm run vercel-build` (migra + compila).
-4. Verifica en Settings → Cron Jobs que aparece `/api/cron/cleanup` y
-   ejecútalo una vez ("Run").
-5. Región de funciones `iad1` (cercana a Neon) en `vercel.json`.
+Cada plantilla define textos del wizard (paso 1–4), portada (saludo/cierre),
+4 secciones con 6–8 arranques, títulos del visor (fecha, canción, cierre),
+invitación de apertura y textos de expirada/404. El wizard, el visor, el
+éxito y el SEO leen del deck; el copy que no varía por plantilla vive en
+`ui.ts`. Estructura indexada por `locale` (`es` hoy; `en`/`pt` encajan después).
+
+### Cómo añadir una plantilla nueva
+
+1. Crea `src/templates/miplantilla.ts` con `export const miplantilla: LetterTemplate`
+   (copia la forma de `amor.ts`) y `export default { es: miplantilla }`.
+2. Registra el `id` en el tipo `LetterTemplate["id"]` (`types.ts`), en el
+   `templateIdSchema` (`lib/schemas.ts`) y en `decks` (`index.ts`).
+3. Verifica que `icon` y los iconos de sección existan en
+   `components/viewer/icons.ts` (registro central lucide).
+4. Comprueba el wizard (selector, cambio conservando por `key`) y el visor
+   (tema, partículas, apertura, portada, secciones).
+
+## Funcionalidades
+
+- **Wizard en 5 pasos** (plantilla, para quién, qué decir, recuerdos, estilo)
+  con autoguardado local cada 800 ms, reanudación y descarte; progreso clicable;
+  Ctrl/⌘+Enter para avanzar.
+- **Paso 2:** tarjetas con interruptor, arrastre (dnd-kit + teclado), chips de
+  arranque del deck, palabras/tiempo de lectura, aviso >900 caracteres,
+  undo/redo, expandir y +Añadir (plantilla, biblioteca, en blanco; máx. 8).
+- **Recuerdos:** fotos (compresión a 1920 px, caption/fecha/lugar), línea de
+  tiempo (8 hitos con foto), nota de voz (graba 60 s u sube audio 4 MB),
+  Spotify.
+- **Estilo:** color (plantilla + 5), fuente (Caveat/Kalam/Dancing), partículas
+  (6), fondo (foto/liso), apertura (sobre/directa), modo noche, palabra secreta
+  (scrypt) y resumen con caducidad.
+- **Vista previa en vivo** (`/preview` + `postMessage`, debounce 300 ms):
+  panel desktop, drawer móvil, salto a la sección del paso.
+- **Visor:** apertura 3D (1–13 toques), typewriter, tarjetas, fotos, hilo de
+  recuerdos, razones/promesas/ábrela-cuándo, voz, fecha con contador, canción
+  (auto-play tras el sobre + píldora), modo noche, respuesta final y pie con
+  cierre de la plantilla.
+- **Contraseña:** sin ella el servidor no serializa contenido (ni el nombre en
+  el SEO); verificación con límite 5 fallos/IP/15 min y cookie HMAC 24 h.
+- **Respuestas:** reacciones + mensaje (honeypot, 5/IP/carta) y panel del
+  creador `/c/[id]/respuestas#token=…` (aperturas, última visita, countdown,
+  eliminar; 403 sin token). Las aperturas se cuentan una vez por sesión
+  (beacon + cookie desde Route Handler).
+- **Éxito:** copiar, ver, compartir, WhatsApp, correo, ver respuestas, QR
+  descargable y tarjeta PNG 1080×1350.
+
+## API
+
+- `POST /api/cartas` — valida con zod (contrato nuevo `sections`/`assets` o
+  legado posicional), honeypot, 5 cartas/IP/día, propiedad de `ut_key`
+  (misma IP <2 h, 403 si no), audio ≤60 s.
+- `DELETE /api/cartas/[id]` — header `x-manage-token` (comparación constante);
+  borra archivos primero y la fila después (204).
+- `POST /api/cartas/[id]/unlock` — palabra secreta → cookie HMAC 24 h.
+- `POST|GET /api/cartas/[id]/respuestas` — responder / panel del creador.
+- `POST /api/cartas/[id]/vista` — beacon de apertura (una por sesión).
+- `POST /api/orphan` — borra huérfanos pre-creación.
+- `GET /api/cron/cleanup` — limpieza (Bearer `CRON_SECRET`).
+- UploadThing: `letterImage` (10×8 MB) y `letterAudio` (1×4 MB); ambas
+  registran propiedad IP→key para la validación.
 
 ## Caducidad (7 días): lectura + cron
 
 - **Lectura:** `/c/[id]` compara `expires_at <= now()` y redirige a
-  `/c/[id]/expirada` al instante, aunque el cron aún no haya corrido.
-- **Borrado real:** `GET /api/cron/cleanup` (diario `0 3 * * *`) borra en lotes
-  de 50: primero `utapi.deleteFiles(keys)` y **solo si tiene éxito** borra las
-  filas (si falla, conserva todo para reintentar — cero huérfanos pagados).
-  Luego barre huérfanos de UploadThing (> TTL+1 días y sin carta asociada) y
-  limpia `rate_events` (> 2 días). Responde y loguea
-  `{ lettersDeleted, filesDeleted, orphansDeleted, rateEventsDeleted, durationMs }`.
-- **En local:** `npm run cleanup` corre la misma lógica (`src/lib/cleanup.ts`).
-- **Plan Hobby:** cron 1 vez/día (±1 h); en Pro puedes usar `0 * * * *`.
+  `/c/[id]/expirada` al instante.
+- **Borrado real:** cron diario (`0 3 * * *`, plan Hobby 1/día): en lotes de 50
+  borra primero **todos los assets** (imagen **y** audio) y solo entonces las
+  filas (cascade a `replies`); luego barre huérfanos de UploadThing
+  (> TTL+1 días sin referencia) y purga `rate_events` (> 2 días). Responde y
+  loguea `{ lettersDeleted, filesDeleted, orphansDeleted, rateEventsDeleted }`.
+- **En local:** `npm run cleanup`.
+- Regla de diseño (programación P2, no implementada): si existiera `opens_at`,
+  `expires_at = (opens_at ?? created_at) + LETTER_TTL_DAYS` para que ninguna
+  carta caduque antes de poder leerse.
 
-## Límites anti-abuso
+## Migraciones
 
-5 cartas/IP/día (`POST /api/cartas` → 429) y 40 subidas/IP/hora
-(FileRouter → `UploadThingError`), más honeypot `website` anti-bots.
+El deploy **no** usa `drizzle-kit migrate` (no sabe renombrar sin perder datos):
+la vía real es `scripts/migrate.ts` (DDL idempotente + backfills + fusiones),
+invocado por `npm run db:migrate` y `npm run vercel-build`. `drizzle/000*.sql`
+documenta cada cambio y `meta/_journal.json` los registra:
 
-## Características
-
-**Wizard (`/crear`, 3 pasos, persiste en `sessionStorage`):**
-
-1. *¿Para quién?* — nombre obligatorio (máx. 150) + opcionales plegables
-   (apodo, fecha especial, tu nombre).
-2. *¿Qué decir?* — mensaje principal obligatorio + 3 secciones opcionales
-   (máx. 1200 c/u), cada una con contador, botón ⤢ de editor amplio y resize.
-   Las secciones vacías no se renderizan en el visor.
-3. *Fotos y música* — dropzone (clic o arrastre, máx. 10 × 8 MB), miniaturas
-   con progreso circular, reorden ← →, descripción/fecha/lugar por foto y
-   borrado con limpieza del huérfano en UploadThing. Campo Spotify que acepta
-   URL `open.spotify.com/track/…`, URLs `intl-es` y URIs `spotify:track:…`.
-
-**Visor (`/c/[id]`):** ritual de apertura con **sobre sellado 3D** (three.js):
-cada carta exige entre **1 y 13 toques** (determinista por ID) para abrirse;
-cuerpo con bordes redondeados y relieve, solapas laterales, bolsillo y solapa
-superior que rota progresivamente; **lacre de cera en forma de corazón** con
-relieve (extruido + clearcoat) al centro, que se rompe con los primeros
-toques; carta interior con el nombre que sale al final. Iluminación de
-hemisferio + clave + relleno + contraluz con tone mapping ACES y encuadre
-adaptativo mobile-first. Accesible por teclado y omitido con
-`prefers-reduced-motion`.
-Luego: marco de teléfono en escritorio (pantalla completa en
-móvil), scroll-snap vertical con navegación por rueda, táctil, teclado
-(↑ ↓, PageUp/PageDown, espacio) y puntos laterales. Fondo difuminado con
-Ken Burns que se aclara en fotos, ~24 partículas en canvas (pausadas con la
-pestaña oculta), typewriter con cursor rosa (clic para completar, no se
-reinicia al volver), tarjetas con polaroid asomando, foto a pantalla completa
-con degradado, contador animado de días juntos y embed oficial de Spotify
-montado solo al entrar en vista. Pie: *"Disponible hasta {fecha} · Hecho con
-openletter"*.
-
-**Éxito (`/crear/exito/[id]`):** confeti rosa, tarjeta con enlace, copiar
-("¡Copiado!" 2 s), ver carta, compartir (Web Share API) y eliminar ahora con
-el `manageToken` del fragmento `#token=` (nunca viaja al servidor en logs).
-
-## Estructura del proyecto
-
-```
-├── drizzle/                  # migración generada (drizzle-kit generate)
-├── scripts/                  # migrate.ts · cleanup-local.ts
-├── vercel.json               # cron diario + región iad1
-└── src/
-    ├── app/
-    │   ├── page.tsx          # landing
-    │   ├── crear/            # wizard + exito/[id]
-    │   ├── c/[id]/           # visor + not-found + expirada/
-    │   └── api/              # uploadthing · cartas · cartas/[id] · orphan · cron/cleanup
-    ├── components/
-    │   ├── wizard/           # FieldCounter · ExpandableTextarea · PhotoUploader · SpotifyField
-    │   └── viewer/           # LetterViewer · Sections · TypewriterText · Particles ·
-    │                         # BlurBackground · DotNav · ExpandModal
-    ├── db/                   # index.ts (neon-http) · schema.ts (letters, photos, rate_events)
-    ├── lib/                  # env · ids · spotify · schemas · ratelimit · expiry ·
-    │                         # dates · uploadthing-client/server · cleanup · letter-data
-    └── styles/globals.css
-```
-
-## Scripts npm
-
-| Script | Qué hace |
-|---|---|
-| `npm run dev` | Servidor local (http://localhost:3000). |
-| `npm run build` / `start` | Compila / sirve producción. |
-| `npm run lint` | ESLint (0 errores). |
-| `npm run db:generate` | Regenera `drizzle/` desde el schema. |
-| `npm run db:migrate` | Aplica el DDL (`scripts/migrate.ts`, requiere DB). |
-| `npm run db:studio` | Drizzle Studio. |
-| `npm run cleanup` | Limpieza local (misma lógica del cron). |
-| `npm run vercel-build` | Build command en Vercel (migra + compila). |
-
-## Modelo de datos (resumen)
-
-- **`letters`**: `id` varchar(12) PK (nanoid 10, alfabeto sin ambiguos),
-  `recipient_name`, `nickname?`, `special_date?`, `sender_name?`,
-  `main_message` (1200), `love/story/dreams_text?`, `spotify_track_id?` (22),
-  `manage_token_hash` + `ip_hash` (SHA-256, nunca en claro), `created_at`,
-  `expires_at`. Índices en `expires_at` y `(ip_hash, created_at)`.
-- **`photos`**: `id` uuid, FK `letter_id` ON DELETE CASCADE, `ut_key` (para
-  borrar en UploadThing), `url`, `position`, `caption?`, `taken_on?`, `place?`.
-- **`rate_events`**: `ip_hash`, `kind` (`upload`|`create`), `created_at`
-  (se purga a los 2 días en el cron).
+- `0000` base · `0001` columna `template` · `0002` theme/sections/timeline/
+  opening/password/view_count/locale + `photos`→`assets` + `replies` +
+  `rate_events.ref` + **backfill** de textos legado a `sections` ·
+  `0003` drop de columnas legado · `0004` fusión de fotos huérfanas.
 
 ## Seguridad y privacidad
 
-- `/c/*` y `/crear/*` con `noindex, nofollow` (+ header `X-Robots-Tag`) y
-  metadatos genéricos ("Alguien te escribió algo especial", sin contenido).
-- Textos guardados como texto plano y renderizados como texto (sin
-  `dangerouslySetInnerHTML` salvo el título estático del wizard).
-- `DELETE` compara el hash del token con `crypto.timingSafeEqual` (403 si
-  falla); borra imágenes primero y solo entonces la fila.
-- Cabeceras `Referrer-Policy` y `X-Content-Type-Options`; CSP/implícita vía
-  `remotePatterns` (`*.ufs.sh`, `utfs.io`) y `frame-src` de Spotify.
-- Sin IPs ni contenido de cartas en logs.
+- Textos como texto plano (sin `dangerouslySetInnerHTML`); `theme`/`sections`
+  solo con valores de listas cerradas; CSS nunca libre del usuario.
+- Con contraseña no se serializa contenido antes de validar (verificado: el
+  HTML bloqueado no contiene textos, fotos, audio ni Spotify ID, ni el nombre
+  en metadatos).
+- scrypt (N=16384) + sal aleatoria + `timingSafeEqual`; cookies `httpOnly`,
+  `secure` en prod, `sameSite=lax`, HMAC con `LETTER_COOKIE_SECRET`.
+- Respuestas sin HTML ni autolink, honeypot y rate limit; sin contenido ni IPs
+  en logs (solo hashes).
+- `noindex, nofollow` en `/c/*`, `/crear/*` y `/preview`.
 
-## Accesibilidad
+## Accesibilidad y rendimiento
 
-`aria-label`/`aria-current` en puntos de navegación, texto completo expuesto a
-lectores (`aria-label` + `sr-only`), modal con focus trap + `Esc` + clic fuera,
-`prefers-reduced-motion` respetado (typewriter, partículas, Ken Burns y
-transiciones del wizard), contraste y focos visibles en el wizard.
+`aria-label`/`aria-current`/`aria-pressed`, roles switch/radio/progressbar,
+foco visible global con el brand, `prefers-reduced-motion` (typewriter,
+partículas, sobre, transiciones), contraste AA en curso. three.js solo en la
+apertura; emoji-mart no existe (sin picker de emojis); QR solo en éxito;
+Spotify IFrame API bajo demanda.
 
-## Estado de verificación
+## Estado de verificación (aceptación)
 
-Con `npm run lint` + `npm run build` en verde y pruebas en dev (`/`, `/crear`,
-404 de carta inexistente, `POST /api/cartas` → 400, cron sin auth → 401, DELETE sin
-token → 401). Pendiente con credenciales reales: crear carta con 3 fotos en
-UploadThing y abrir su `/c/[id]` en incógnito, expiración manual (`expires_at`
-pasado → `/expirada` + cron que borra fila y archivos), `DELETE` con token
-correcto/incorrecto, rate limits y Lighthouse móvil ≥ 85/95.
+- [x] Cero hardcode: wizard, visor, éxito y SEO leen del deck (`ui.ts` + decks).
+- [x] 6 plantillas cambian textos, tema, partículas y apertura (sobre/directa).
+- [x] Cambiar de plantilla conserva por `key` (resto → personalizadas).
+- [x] Paso 2: chips, toggles, arrastre + teclado, añadir/quitar, contadores, autosave.
+- [x] Timeline, razones, ábrela-cuándo y promesas se editan y renderizan.
+- [x] Voz: graba (lógica por mimeType), reproductor propio, borrado en cron.
+- [x] Contraseña: sin HTML filtrado; entra y recuerda 24 h; 5 fallos bloquean.
+- [x] Respuestas llegan al panel con token; 403 sin token; cascade al borrar.
+- [x] Preview <500 ms sin guardar; QR y PNG descargan.
+- [x] Cron borra Neon + UploadThing (imágenes y audios) con estadísticas.
+- [x] Migración sobre datos reales sin pérdidas (cartas, fotos y textos intactos).
+- [x] `npm run build` sin errores TS ni lint.
+- [ ] Pendiente manual: grabar voz en Chrome/Safari físicos, POST con secciones
+      (rate limit 5/día consumido en pruebas), Lighthouse móvil ≥85/95.
 
-## Rutas principales
+## Decisiones y desviaciones
 
-`/` (landing) · `/crear` (wizard 3 pasos) · `/crear/exito/[id]` (enlace +
-copiar/compartir/eliminar con `#token=`) · `/c/[id]` (visor) ·
-`POST /api/cartas` · `DELETE /api/cartas/[id]`
-(header `x-manage-token`, hash en tiempo constante) ·
-`GET /api/cron/cleanup` · `POST /api/orphan` (huérfanos pre-creación).
-
-## Decisiones y desviaciones del prompt
-
-- `cacheComponents: false` en `next.config.ts`: Next 16 lo trae activado en el
-  scaffold y prohíbe `export const dynamic`; las rutas API y `/c/[id]` deben
-  ser dinámicas por naturaleza.
-- Migración propia (`scripts/migrate.ts`, DDL idempotente) en vez de
-  `drizzle-kit migrate` en el build: más robusta sin archivos externos;
-  `drizzle/0000_*.sql` se genera igual con `npm run db:generate`.
-- `src/lib/uploadthing-client.ts` + `uploadthing-server.ts` separados: el
-  `UTApi` no puede importarse en el cliente.
-- Sin `react-hook-form` en el wizard final: el estado con fotos/compresión
-  encajaba mejor en `useState` + validación zod compartida en el servidor;
-  la dependencia queda instalada pero el formulario usa estado controlado con
-  el mismo `createLetterSchema` como contrato.
+- `cacheComponents: false` (Next 16 prohíbe `export const dynamic` con él).
+- `migrate.ts` como vía real en vez de `drizzle-kit migrate` (rename seguro).
+- `sections` jsonb con `key/kind/title/icon/body/items/pairs/enabled/order`.
+- Conteo de visitas por beacon (el `cookies().set()` de Server Components no
+  persiste; el Route Handler sí).
+- Sin creador distinguible en el conteo (el visor es anónimo): cuenta por
+  sesión de navegador.
+- `regalo`/`raspadita` renderizan el sobre hasta su fase (marcadas "pronto").
+- Reacciones con emojis solo porque se pidió conservarlas; el resto son lucide.

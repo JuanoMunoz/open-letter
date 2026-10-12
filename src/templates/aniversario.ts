@@ -3,7 +3,7 @@ import type { LetterTemplate } from "./types";
 export const aniversario: LetterTemplate = {
   id: "aniversario",
   name: "Carta de aniversario",
-  emoji: "💒",
+  icon: "Gem",
   tagline: "Otro año juntos y todavía eliges quedarte",
   theme: {
     brand: "#8E2A45",

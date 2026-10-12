@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { motion } from "motion/react";
 import { X } from "lucide-react";
+import { ui } from "@/templates/ui";
 
 /** Modal de texto completo con focus trap, Esc y clic fuera. */
 export function ExpandModal({ title, text, onClose }: { title: string; text: string; onClose: () => void }) {
@@ -61,7 +62,7 @@ export function ExpandModal({ title, text, onClose }: { title: string; text: str
           <button
             ref={closeRef}
             onClick={onClose}
-            aria-label="Cerrar"
+            aria-label={ui.close}
             className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EBEBEF] text-neutral-600"
           >
             <X size={16} />

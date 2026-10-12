@@ -3,7 +3,7 @@ import type { LetterTemplate } from "./types";
 export const amistad: LetterTemplate = {
   id: "amistad",
   name: "Carta de amistad",
-  emoji: "🫶",
+  icon: "Users",
   tagline: "Para ese amigo que es familia elegida",
   theme: {
     brand: "#0E7C7B",

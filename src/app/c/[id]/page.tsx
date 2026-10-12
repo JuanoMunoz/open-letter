@@ -5,6 +5,7 @@ import { LetterViewer } from "@/components/viewer/LetterViewer";
 import { LockedScreen } from "@/components/viewer/LockedScreen";
 import { loadLetter, loadLetterShell } from "@/lib/letter-data";
 import { verifyAccessCookie, accessCookieName } from "@/lib/password";
+import { ui } from "@/templates/ui";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   // Solo carátula: ni el nombre se revela antes de verificar.
@@ -12,12 +13,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const shell = await loadLetterShell(id);
   void shell;
   return {
-    title: "Una carta para ti — openletter",
-    description: "Alguien te escribió algo especial.",
+    title: ui.seoLetterTitle,
+    description: ui.seoLetterDescription,
     robots: { index: false, follow: false },
     openGraph: {
-      title: "Una carta para ti",
-      description: "Alguien te escribió algo especial.",
+      title: ui.seoLetterTitle,
+      description: ui.seoLetterDescription,
     },
   };
 }

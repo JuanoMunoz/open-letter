@@ -10,9 +10,6 @@ const envSchema = z.object({
   IP_HASH_SALT: z.string().min(1, "IP_HASH_SALT es requerido (openssl rand -hex 16)"),
   /** HMAC para cookies de acceso (cartas con contraseña, Fase E). */
   LETTER_COOKIE_SECRET: z.string().min(16).optional(),
-  /** IA de escritura (Fase P2, opcional). */
-  ANTHROPIC_API_KEY: z.string().min(1).optional(),
-  ANTHROPIC_MODEL: z.string().min(1).optional(),
   /** Programación de apertura (P2, default 14). */
   MAX_SCHEDULE_DAYS: z.coerce.number().int().min(1).max(60).default(14),
 });

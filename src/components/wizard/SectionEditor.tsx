@@ -6,9 +6,9 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Maximize2, Undo2, Redo2, Trash2, Sparkles } from "lucide-react";
 import { FieldCounter } from "./FieldCounter";
 import { ExpandModalEditor } from "./ExpandableTextarea";
-import { EmojiButton } from "./EmojiButton";
 import { ItemsEditor, type OpenPair } from "./ItemsEditor";
 import { sectionIcon } from "@/components/viewer/icons";
+import { ui } from "@/templates/ui";
 import type { WizardSection } from "./sections-model";
 
 /** Tarjeta de sección: arrastre, toggle, chips, estado, undo/redo, emoji, expandir. */
@@ -82,7 +82,7 @@ export function SectionEditor({
           type="button"
           {...attributes}
           {...listeners}
-          aria-label={`Reordenar ${section.title || "sección"}`}
+          aria-label={ui.reorderSection(section.title || "sección")}
           className="flex h-8 w-6 cursor-grab items-center justify-center rounded text-neutral-400 active:cursor-grabbing"
         >
           <GripVertical size={16} />
@@ -102,7 +102,7 @@ export function SectionEditor({
             type="button"
             role="switch"
             aria-checked={section.enabled}
-            aria-label={`Incluir ${section.title} en la carta`}
+            aria-label={ui.includeSection(section.title)}
             onClick={() => onChange({ ...section, enabled: !section.enabled })}
             className="relative h-6 w-11 shrink-0 rounded-full transition"
             style={{ background: section.enabled ? "var(--brand, #E0698F)" : "#D6D6DC" }}
@@ -117,7 +117,7 @@ export function SectionEditor({
           <button
             type="button"
             onClick={onRemove}
-            aria-label={`Quitar ${section.title}`}
+            aria-label={ui.removeSection(section.title)}
             className="text-neutral-400 hover:text-red-500"
           >
             <Trash2 size={16} />
@@ -149,7 +149,7 @@ export function SectionEditor({
                   setExpandDraft(section.body);
                   setExpandOpen(true);
                 }}
-                aria-label={`Expandir ${section.title}`}
+                aria-label={ui.expandField(section.title)}
                 className="absolute right-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-white text-neutral-500 shadow-sm"
               >
                 <Maximize2 size={14} />
@@ -195,9 +195,9 @@ export function SectionEditor({
           {/* Barra de estado + herramientas */}
           <div className="mt-2 flex items-center gap-1.5">
             <p className="mr-auto text-[11px] font-semibold text-[#6B6B76]">
-              {words} palabras · ≈ {readSecs} s de lectura
+              {ui.statusLine(words, readSecs)}
               {section.body.length > 900 && (
-                <span className="text-orange-500"> · En móvil se lee mejor corto</span>
+                <span className="text-orange-500">{ui.statusLong}</span>
               )}
             </p>
             {!isList && (
@@ -206,7 +206,7 @@ export function SectionEditor({
                   type="button"
                   onClick={undo}
                   disabled={hist.past.length === 0}
-                  aria-label="Deshacer"
+                  aria-label={ui.undoAction}
                   className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-neutral-500 shadow-sm disabled:opacity-30"
                 >
                   <Undo2 size={14} />
@@ -215,19 +215,18 @@ export function SectionEditor({
                   type="button"
                   onClick={redo}
                   disabled={hist.future.length === 0}
-                  aria-label="Rehacer"
+                  aria-label={ui.redoAction}
                   className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-neutral-500 shadow-sm disabled:opacity-30"
                 >
                   <Redo2 size={14} />
                 </button>
-                <EmojiButton onPick={(e) => insertAtCursor(e)} />
               </>
             )}
           </div>
 
           {!isList && (
-            <p className="mt-1.5 flex items-center gap-1 text-[11px] text-neutral-400">
-              <Sparkles size={11} /> Tip: escribe a mano; el botón Inspírame con IA llegará pronto.
+            <p className="mt-1.5 text-[11px] text-neutral-400">
+              {ui.writeTip}
             </p>
           )}
         </>

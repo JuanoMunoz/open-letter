@@ -23,7 +23,9 @@ import {
   SectionPromises,
   SectionTimeline,
   SectionVoice,
+  SectionReply,
 } from "./SectionExtras";
+import { SongPlayer } from "./SongPlayer";
 import { formatExpiry } from "@/lib/dates";
 import type { LetterView, SectionKind } from "./types";
 
@@ -73,6 +75,7 @@ export function LetterViewer({ letter, preview = false, scrollSignal = null }: {
     if (letter.audio) list.push({ kind: "voice", key: "voice", label: "Nota de voz" });
     if (letter.specialDate) list.push({ kind: "chapter", key: "chapter", label: template.dateSectionTitle });
     if (letter.spotifyTrackId) list.push({ kind: "song", key: "song", label: template.songTitle });
+    if (!preview) list.push({ kind: "reply", key: "reply", label: "Responder" });
     return list;
   }, [letter, template, cardDefs]);
 
@@ -125,7 +128,13 @@ export function LetterViewer({ letter, preview = false, scrollSignal = null }: {
     sectionRefs.current[i]?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
-  // Señal externa (preview en vivo): salta a la sección con esta key.
+  // Beacon de apertura: cuenta al abrir la carta (tras el ritual),
+  // una vez por sesión vía cookie del servidor.
+  useEffect(() => {
+    if (preview || !opened) return;
+    fetch(`/api/cartas/${letter.id}/vista`, { method: "POST" }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opened]);
   const lastSignal = useRef(0);
   useEffect(() => {
     if (!scrollSignal || scrollSignal.n === lastSignal.current) return;
@@ -154,6 +163,25 @@ export function LetterViewer({ letter, preview = false, scrollSignal = null }: {
 
   let cardOrder = 0;
 
+  // Música de fondo: arranca con el gesto de apertura (gesto fresco).
+  // Sin ritual no hay gesto inicial: se intenta una vez al montar si aplica.
+  const noRitual = (letter.opening || template.opening) === "ninguna";
+  const [musicTick, setMusicTick] = useState(() =>
+    !preview &&
+    noRitual &&
+    !!letter.spotifyTrackId &&
+    typeof window !== "undefined" &&
+    !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+      ? 1
+      : 0,
+  );
+  const [bgLive, setBgLive] = useState(false);
+  const musicApi = useRef<{ pause: () => void } | null>(null);
+  const handleOpened = () => {
+    setOpened(true);
+    if (letter.spotifyTrackId && !preview) setMusicTick((n) => n + 1);
+  };
+
   if (!opened && (letter.opening || template.opening) !== "ninguna") {
     return (
       <SealedEnvelope
@@ -165,7 +193,7 @@ export function LetterViewer({ letter, preview = false, scrollSignal = null }: {
         brandSoft={theme.brandSoft}
         paper={theme.paper}
         scriptFont={scriptFamily(theme.font)}
-        onDone={() => setOpened(true)}
+        onDone={handleOpened}
       />
     );
   }
@@ -249,11 +277,18 @@ export function LetterViewer({ letter, preview = false, scrollSignal = null }: {
                 <SectionTimeline items={letter.timeline} />
               )}
               {s.kind === "voice" && letter.audio && <SectionVoice audio={letter.audio} />}
+              {s.kind === "reply" && <SectionReply letterId={letter.id} />}
               {s.kind === "chapter" && letter.specialDate && (
                 <SectionChapter letter={letter} template={template} active={seenActive.has(i)} />
               )}
               {s.kind === "song" && letter.spotifyTrackId && (
-                <SectionSong letter={letter} template={template} active={seenActive.has(i)} />
+                <SectionSong
+                  letter={letter}
+                  template={template}
+                  active={seenActive.has(i)}
+                  backgroundLive={bgLive}
+                  onPauseBackground={() => musicApi.current?.pause()}
+                />
               )}
             </div>
           ))}
@@ -271,6 +306,14 @@ export function LetterViewer({ letter, preview = false, scrollSignal = null }: {
         </div>
 
         <DotNav sections={sections} active={Math.min(active, sections.length - 1)} onGo={goTo} />
+        {letter.spotifyTrackId && !preview && (
+          <SongPlayer
+            trackId={letter.spotifyTrackId}
+            autostart={musicTick}
+            onLive={setBgLive}
+            apiRef={musicApi}
+          />
+        )}
       </div>
     </div>
   );

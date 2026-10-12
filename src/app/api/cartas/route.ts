@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { getDb, clientIp } from "@/db";
 import { letters, assets } from "@/db/schema";
 import { createLetterSchema } from "@/lib/schemas";
+import { hashPassword } from "@/lib/password";
 import { newLetterId, newManageToken, sha256Hex, hashIp } from "@/lib/ids";
 import { expiresAtFromNow } from "@/lib/expiry";
 import { LIMITS, countRecentEvents, recordEvent, isOwnedUpload } from "@/lib/ratelimit";
@@ -107,6 +108,22 @@ export async function POST(req: NextRequest) {
   const now = new Date();
   const expiresAt = expiresAtFromNow(now);
 
+  // Palabra secreta opcional (4–32 caracteres).
+  let passwordHash: string | null = null;
+  let passwordHint: string | null = null;
+  if (data.password && data.password.length > 0) {
+    if (data.password.length < 4 || data.password.length > 32) {
+      return NextResponse.json({ error: "La palabra secreta debe tener entre 4 y 32 caracteres." }, { status: 400 });
+    }
+    try {
+      passwordHash = await hashPassword(data.password);
+    } catch (e) {
+      console.error("[POST /api/cartas] scrypt falló:", e);
+      return NextResponse.json({ error: "No se pudo proteger la carta. Intenta de nuevo." }, { status: 500 });
+    }
+    passwordHint = data.passwordHint?.trim() ? data.passwordHint.trim().slice(0, 80) : null;
+  }
+
   try {
     const db = getDb();
     const letterRow = {
@@ -123,6 +140,8 @@ export async function POST(req: NextRequest) {
       timeline: data.timeline ?? [],
       opening: data.opening ?? undefined,
       locale: data.locale ?? "es",
+      passwordHash,
+      passwordHint,
       manageTokenHash,
       ipHash,
       expiresAt,

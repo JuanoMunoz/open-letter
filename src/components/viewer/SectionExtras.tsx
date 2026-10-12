@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState, createElement } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Play, Pause, MailOpen, Check, CalendarDays } from "lucide-react";
+import { Play, Pause, MailOpen, Check, CalendarDays, Send } from "lucide-react";
+import { REPLY_EMOJIS } from "@/lib/schemas";
 import { sectionIcon } from "./icons";
 import { formatLongDate } from "@/lib/dates";
 import type { SectionItem } from "@/templates/types";
-import type { ViewerPhoto, ViewerAudio } from "./types";
+import type { ViewerAudio } from "./types";
 
 function CardShell({ children, wide }: { children: React.ReactNode; wide?: boolean }) {
   return (
@@ -205,7 +206,99 @@ export function SectionTimeline({
   );
 }
 
-/** Nota de voz: tarjeta "Escucha esto" con reproductor propio. */
+/** Respuesta del destinatario: reacción + mensaje corto. */
+export function SectionReply({ letterId }: { letterId: string }) {
+  const [emoji, setEmoji] = useState<string | null>(null);
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async () => {
+    if ((!emoji && !message.trim()) || sending || sent) return;
+    setSending(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/cartas/${letterId}/respuestas`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ emoji: emoji ?? "❤️", message: message.trim(), website: "" }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError((data as { error?: string }).error ?? "No se pudo enviar.");
+        setSending(false);
+        return;
+      }
+      setSent(true);
+    } catch {
+      setError("Error de red. Intenta de nuevo.");
+      setSending(false);
+    }
+  };
+
+  return (
+    <CardShell>
+      <CardHeader title="¿Quieres responder?" icon="HeartHandshake" />
+      {sent ? (
+        <p className="py-4 text-center">
+          <span className="font-letter text-[26px] text-neutral-800">¡Respuesta enviada! Gracias por leer.</span>
+        </p>
+      ) : (
+        <>
+          <div className="mb-3 flex justify-center gap-1.5" role="radiogroup" aria-label="Elige una reacción">
+            {REPLY_EMOJIS.map((e) => (
+              <button
+                key={e}
+                type="button"
+                role="radio"
+                aria-checked={emoji === e}
+                onClick={() => setEmoji(emoji === e ? null : e)}
+                className="flex h-11 w-11 items-center justify-center rounded-full text-2xl transition"
+                style={{
+                  background: emoji === e ? "var(--brand-soft)" : "#F4F4F6",
+                  transform: emoji === e ? "scale(1.15)" : undefined,
+                  boxShadow: emoji === e ? "0 4px 14px rgba(0,0,0,.12)" : undefined,
+                }}
+              >
+                {e}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              value={message}
+              onChange={(e) => setMessage(e.target.value.slice(0, 280))}
+              placeholder="Unas palabras (opcional)…"
+              aria-label="Mensaje de respuesta (opcional)"
+              maxLength={280}
+              className="h-[46px] w-full rounded-xl border border-[#D6D6DC] bg-[#EBEBEF] px-3.5 text-[15px] outline-none placeholder:text-neutral-400 focus:border-[#E0698F]"
+            />
+            <button
+              type="button"
+              onClick={submit}
+              disabled={(!emoji && !message.trim()) || sending}
+              aria-label="Enviar respuesta"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white disabled:opacity-40"
+              style={{ background: "var(--brand)" }}
+            >
+              <Send size={17} />
+            </button>
+          </div>
+          <p className="mt-1.5 text-right text-[11px] font-bold text-[#6B6B76]">{message.length}/280</p>
+          {error && (
+            <p role="alert" className="mt-1 text-center text-xs font-semibold text-red-500">
+              {error}
+            </p>
+          )}
+          <p className="mt-1 flex items-center justify-center gap-1 text-center text-[11px] text-neutral-400">
+            <Send size={10} /> Tu respuesta solo la verá quien te escribió.
+          </p>
+        </>
+      )}
+    </CardShell>
+  );
+}
 export function SectionVoice({ audio }: { audio: ViewerAudio }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);

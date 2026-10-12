@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Copy, Check, Eye, Share2, Trash2 } from "lucide-react";
+import QRCode from "qrcode";
+import { Copy, Check, Eye, Share2, Trash2, QrCode, Download, MessageCircle, Mail, Inbox } from "lucide-react";
+import { getTemplate } from "@/templates";
 
 export default function ExitoPage() {
   const params = useParams<{ id: string }>();
@@ -18,10 +20,27 @@ export default function ExitoPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleted, setDeleted] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [qr, setQr] = useState("");
+  const [makingCard, setMakingCard] = useState(false);
+  const [meta] = useState(() => {
+    if (typeof window === "undefined") return { recipientName: "", templateId: "amor" };
+    try {
+      const raw = sessionStorage.getItem("openletter-last");
+      if (raw) return { recipientName: "", templateId: "amor", ...JSON.parse(raw) };
+    } catch { /* noop */ }
+    return { recipientName: "", templateId: "amor" };
+  });
 
   const url = `/c/${id}`;
   const [origin] = useState(() => (typeof window === "undefined" ? "" : window.location.origin));
   const fullUrl = origin ? `${origin}/c/${id}` : url;
+  const template = getTemplate(meta.templateId);
+
+  useEffect(() => {
+    QRCode.toDataURL(fullUrl, { width: 440, margin: 2, color: { dark: "#1c1c22", light: "#ffffff" } })
+      .then(setQr)
+      .catch(() => {});
+  }, [fullUrl]);
 
   const copy = async () => {
     try {
@@ -47,6 +66,88 @@ export default function ExitoPage() {
       void copy();
     }
   };
+
+  const downloadQr = () => {
+    if (!qr) return;
+    const a = document.createElement("a");
+    a.href = qr;
+    a.download = `openletter-${id}-qr.png`;
+    a.click();
+  };
+
+  /** Tarjeta 1080×1350 para imprimir/compartir (canvas, con QR). */
+  const downloadCard = async () => {
+    if (makingCard) return;
+    setMakingCard(true);
+    try {
+      const W = 1080;
+      const H = 1350;
+      const canvas = document.createElement("canvas");
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext("2d")!;
+      const grad = ctx.createLinearGradient(0, 0, W, H);
+      grad.addColorStop(0, template.theme.bgGradient[0]);
+      grad.addColorStop(1, template.theme.brandSoft);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+      // Marco
+      ctx.strokeStyle = template.theme.brand;
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.roundRect(48, 48, W - 96, H - 96, 48);
+      ctx.stroke();
+      // Icono (sobre con corazón, estilo marca)
+      ctx.fillStyle = template.theme.brand;
+      ctx.beginPath();
+      ctx.roundRect(W / 2 - 130, 200, 260, 170, 28);
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "120px serif";
+      ctx.textAlign = "center";
+      ctx.fillText("♥", W / 2, 330);
+      // Nombre
+      ctx.fillStyle = "#1c1c22";
+      try {
+        await document.fonts.load('90px Caveat');
+      } catch { /* fallback */ }
+      ctx.font = "90px Caveat, cursive";
+      const name = meta.recipientName || "Para ti";
+      ctx.fillText(name.length > 18 ? name.slice(0, 18) + "…" : name, W / 2, 560, W - 200);
+      ctx.fillStyle = "#6B6B76";
+      ctx.font = "600 34px Inter, sans-serif";
+      ctx.fillText("Alguien te escribió algo especial", W / 2, 630);
+      ctx.fillText("con openletter", W / 2, 675);
+      // QR
+      const qrUrl = await QRCode.toDataURL(fullUrl, { width: 560, margin: 1 });
+      const img = new Image();
+      await new Promise<void>((res, rej) => {
+        img.onload = () => res();
+        img.onerror = () => rej(new Error("qr"));
+        img.src = qrUrl;
+      });
+      const QS = 380;
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.roundRect(W / 2 - QS / 2 - 24, 760, QS + 48, QS + 48, 32);
+      ctx.fill();
+      ctx.drawImage(img, W / 2 - QS / 2, 784, QS, QS);
+      ctx.fillStyle = "#6B6B76";
+      ctx.font = "600 30px Inter, sans-serif";
+      ctx.fillText("Escanea para leerla · vive 7 días", W / 2, 1240);
+      const a = document.createElement("a");
+      a.href = canvas.toDataURL("image/png");
+      a.download = `openletter-${id}-tarjeta.png`;
+      a.click();
+    } catch {
+      /* noop */
+    } finally {
+      setMakingCard(false);
+    }
+  };
+
+  const waUrl = `https://wa.me/?text=${encodeURIComponent(`Te escribí una carta con openletter 💌 ${fullUrl}`)}`;
+  const mailUrl = `mailto:?subject=${encodeURIComponent("Te escribí una carta")}&body=${encodeURIComponent(`Léela aquí: ${fullUrl}`)}`;
 
   const remove = async () => {
     if (!confirm("¿Eliminar esta carta ahora mismo? No se podrá recuperar.")) return;
@@ -106,7 +207,42 @@ export default function ExitoPage() {
             <button onClick={share} className="flex items-center gap-1.5 rounded-full border border-[#D6D6DC] bg-white px-5 py-2.5 text-sm font-bold text-neutral-800">
               <Share2 size={15} /> Compartir
             </button>
+            <a href={waUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 rounded-full bg-[#25D366] px-5 py-2.5 text-sm font-bold text-white">
+              <MessageCircle size={15} /> WhatsApp
+            </a>
+            <a href={mailUrl} className="flex items-center gap-1.5 rounded-full border border-[#D6D6DC] bg-white px-5 py-2.5 text-sm font-bold text-neutral-800">
+              <Mail size={15} /> Correo
+            </a>
+            {token && (
+              <Link href={`/c/${id}/respuestas#token=${token}`} className="flex items-center gap-1.5 rounded-full border border-[#D6D6DC] bg-white px-5 py-2.5 text-sm font-bold text-neutral-800">
+                <Inbox size={15} /> Ver respuestas
+              </Link>
+            )}
           </div>
+        </div>
+
+        {/* QR + tarjeta */}
+        <div className="mt-4 rounded-3xl border border-[#E4E4E8] bg-white p-5 text-left shadow-sm">
+          <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-[#6B6B76]">Código QR</p>
+          <div className="flex items-center gap-4">
+            {qr ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={qr} alt="QR del enlace de la carta" className="h-28 w-28 rounded-2xl border border-[#E4E4E8]" />
+            ) : (
+              <span className="flex h-28 w-28 items-center justify-center rounded-2xl bg-[#EBEBEF] text-neutral-400">
+                <QrCode size={28} />
+              </span>
+            )}
+            <div className="flex flex-1 flex-col gap-2">
+              <button onClick={downloadQr} disabled={!qr} className="flex items-center justify-center gap-1.5 rounded-full border border-[#D6D6DC] bg-white px-4 py-2 text-sm font-bold text-neutral-800 disabled:opacity-40">
+                <Download size={15} /> Descargar QR
+              </button>
+              <button onClick={downloadCard} disabled={makingCard} className="flex items-center justify-center gap-1.5 rounded-full bg-neutral-900 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
+                <Download size={15} /> {makingCard ? "Creando…" : "Tarjeta PNG (1080×1350)"}
+              </button>
+            </div>
+          </div>
+          <p className="mt-2 text-xs text-[#6B6B76]">La tarjeta sirve para imprimir o mandar por chat.</p>
         </div>
 
         <p className="mt-4 text-xs text-[#6B6B76]">

@@ -1,6 +1,6 @@
 "use client";
 
-import { Moon, Lock, CalendarClock } from "lucide-react";
+import { Moon, Lock, CalendarClock, KeyRound } from "lucide-react";
 import {
   THEME_COLOR_IDS,
   THEME_FONTS,
@@ -40,12 +40,20 @@ export function StepStyle({
   onPatch,
   photoCount,
   sectionCount,
+  password,
+  setPassword,
+  passwordHint,
+  setPasswordHint,
 }: {
   template: LetterTemplate;
   value: StyleState;
   onPatch: (p: Partial<StyleState>) => void;
   photoCount: number;
   sectionCount: number;
+  password: string;
+  setPassword: (v: string) => void;
+  passwordHint: string;
+  setPasswordHint: (v: string) => void;
 }) {
   const [a, b, c] = template.wizard.step4Title;
   const chip = (active: boolean) =>
@@ -202,6 +210,37 @@ export function StepStyle({
           <span className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow" style={{ left: value.nightMode ? "22px" : "2px" }} />
         </span>
       </button>
+
+      <div className="rounded-2xl border border-[#E4E4E8] bg-white p-4">
+        <p className="mb-1 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#6B6B76]">
+          <KeyRound size={13} /> Protegerla con una palabra secreta
+          <span className="font-normal normal-case tracking-normal">(opcional)</span>
+        </p>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value.slice(0, 32))}
+          placeholder="Palabra secreta (4–32 caracteres)"
+          autoComplete="new-password"
+          maxLength={32}
+          aria-label="Palabra secreta (opcional)"
+          className="h-[50px] w-full rounded-xl border border-[#D6D6DC] bg-[#EBEBEF] px-4 text-[16px] outline-none placeholder:text-neutral-400 focus:border-[#E0698F]"
+        />
+        {password.length > 0 && password.length < 4 && (
+          <p className="mt-1 text-xs font-semibold text-red-500">Mínimo 4 caracteres.</p>
+        )}
+        <input
+          value={passwordHint}
+          onChange={(e) => setPasswordHint(e.target.value.slice(0, 80))}
+          placeholder="Pista visible (opcional): donde nos conocimos"
+          aria-label="Pista de la palabra secreta (opcional)"
+          maxLength={80}
+          className="mt-2 h-[46px] w-full rounded-xl border border-[#D6D6DC] bg-[#EBEBEF] px-4 text-[15px] outline-none placeholder:text-neutral-400 focus:border-[#E0698F]"
+        />
+        <p className="mt-1.5 text-xs leading-snug text-[#6B6B76]">
+          Sin la palabra, ni siquiera el servidor muestra el contenido.
+        </p>
+      </div>
 
       <hr className="border-[#E4E4E8]" />
 

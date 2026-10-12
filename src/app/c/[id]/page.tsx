@@ -1,18 +1,22 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { LetterViewer } from "@/components/viewer/LetterViewer";
-import { loadLetter } from "@/lib/letter-data";
+import { LockedScreen } from "@/components/viewer/LockedScreen";
+import { loadLetter, loadLetterShell } from "@/lib/letter-data";
+import { verifyAccessCookie, accessCookieName } from "@/lib/password";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  // Solo carátula: ni el nombre se revela antes de verificar.
   const { id } = await params;
-  const result = await loadLetter(id);
-  const name = result.status === "ok" ? result.letter.recipientName : "alguien especial";
+  const shell = await loadLetterShell(id);
+  void shell;
   return {
-    title: `Una carta para ${name} — openletter`,
+    title: "Una carta para ti — openletter",
     description: "Alguien te escribió algo especial.",
     robots: { index: false, follow: false },
     openGraph: {
-      title: `Una carta para ${name}`,
+      title: "Una carta para ti",
       description: "Alguien te escribió algo especial.",
     },
   };
@@ -20,8 +24,23 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function CartaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const shell = await loadLetterShell(id);
+  if (shell.status === "missing") notFound();
+  if (shell.status === "expired") redirect(`/c/${id}/expirada`);
+
+  const jar = await cookies();
+  const unlocked =
+    !shell.shell.hasPassword ||
+    verifyAccessCookie(id, jar.get(accessCookieName(id))?.value);
+  if (!unlocked) {
+    return <LockedScreen id={id} hint={shell.shell.passwordHint} />;
+  }
+
   const result = await loadLetter(id);
   if (result.status === "missing") notFound();
   if (result.status === "expired") redirect(`/c/${id}/expirada`);
+
+  // El conteo de aperturas lo hace el beacon cliente (POST /vista) con
+  // cookie de sesión, fiable desde un Route Handler.
   return <LetterViewer letter={result.letter} />;
 }

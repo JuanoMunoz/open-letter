@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, createElement } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
-import { Quote, CalendarDays, MapPin, Music2, Maximize2 } from "lucide-react";
+import { Quote, CalendarDays, MapPin, Music2, Maximize2, Pause } from "lucide-react";
 import { sectionIcon } from "./icons";
 import { TypewriterText, useTypewriter } from "./TypewriterText";
 import { ExpandModal } from "./ExpandModal";
@@ -282,7 +282,7 @@ export function SectionChapter({ letter, template, active }: { letter: LetterVie
 
 /* ---------- 8. Nuestra Canción ---------- */
 
-export function SectionSong({ letter, template, active }: { letter: LetterView; template: LetterTemplate; active: boolean }) {
+export function SectionSong({ letter, template, active, backgroundLive, onPauseBackground }: { letter: LetterView; template: LetterTemplate; active: boolean; backgroundLive?: boolean; onPauseBackground?: () => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
@@ -310,7 +310,29 @@ export function SectionSong({ letter, template, active }: { letter: LetterView; 
             <Maximize2 size={13} />
           </button>
         </div>
-        {inView ? (
+        {backgroundLive ? (
+          <div className="flex items-center gap-3 rounded-xl bg-[#FBE4EC] px-4 py-3.5">
+            <span className="flex h-4 items-end gap-[2px]" aria-hidden>
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  className="w-[3px] rounded-full"
+                  style={{ height: "100%", background: "var(--brand)", animation: `musicbar 0.8s ease-in-out ${i * 0.15}s infinite alternate` }}
+                />
+              ))}
+            </span>
+            <p className="flex-1 text-sm font-bold text-neutral-800">Sonando de fondo…</p>
+            <button
+              type="button"
+              onClick={onPauseBackground}
+              aria-label="Pausar música de fondo"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-white"
+              style={{ background: "var(--brand)" }}
+            >
+              <Pause size={16} />
+            </button>
+          </div>
+        ) : inView ? (
           <iframe
             src={spotifyEmbedUrl(letter.spotifyTrackId!)}
             width="100%"

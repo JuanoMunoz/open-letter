@@ -43,4 +43,5 @@ export type SectionKind =
   | { kind: "chapter"; key: string; label: string }
   | { kind: "song"; key: string; label: string }
   | { kind: "timeline"; key: string; label: string }
-  | { kind: "voice"; key: string; label: string };
+  | { kind: "voice"; key: string; label: string }
+  | { kind: "reply"; key: string; label: string };

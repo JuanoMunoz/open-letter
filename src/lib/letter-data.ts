@@ -60,6 +60,56 @@ export async function loadLetter(
   }
 }
 
+export interface LetterShell {
+  id: string;
+  templateId: string;
+  opening: string;
+  passwordHint: string | null;
+  hasPassword: boolean;
+  expiresAt: string;
+}
+
+/**
+ * Carátula mínima SIN contenido (para cartas con contraseña sin verificar).
+ * Nunca incluye textos, fotos, audio ni Spotify ID.
+ */
+export async function loadLetterShell(
+  id: string,
+): Promise<{ status: "ok"; shell: LetterShell } | { status: "missing" } | { status: "expired" }> {
+  try {
+    const db = getDb();
+    const rows = await db
+      .select({
+        id: letters.id,
+        template: letters.template,
+        opening: letters.opening,
+        passwordHint: letters.passwordHint,
+        passwordHash: letters.passwordHash,
+        expiresAt: letters.expiresAt,
+      })
+      .from(letters)
+      .where(eq(letters.id, id))
+      .limit(1);
+    const row = rows[0];
+    if (!row) return { status: "missing" };
+    if (new Date(row.expiresAt).getTime() <= Date.now()) return { status: "expired" };
+    return {
+      status: "ok",
+      shell: {
+        id: row.id,
+        templateId: row.template ?? "amor",
+        opening: row.opening ?? "sobre",
+        passwordHint: row.passwordHint,
+        hasPassword: !!row.passwordHash,
+        expiresAt: new Date(row.expiresAt).toISOString(),
+      },
+    };
+  } catch (e) {
+    console.error("[loadLetterShell] error DB:", (e as Error)?.message);
+    return { status: "missing" };
+  }
+}
+
 function toView(
   row: typeof letters.$inferSelect,
   arows: Array<typeof assets.$inferSelect>,

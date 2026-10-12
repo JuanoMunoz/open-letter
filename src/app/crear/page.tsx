@@ -39,6 +39,8 @@ interface WizardState {
   spotifyUrl: string;
   timeline: WizardMilestone[];
   audio: WizardAudio | null;
+  password: string;
+  passwordHint: string;
   visited: number[];
 }
 
@@ -61,6 +63,8 @@ function load(): { state: WizardState; resumed: boolean } {
     spotifyUrl: "",
     timeline: [],
     audio: null,
+    password: "",
+    passwordHint: "",
     visited: [0],
   });
   try {
@@ -239,6 +243,10 @@ export default function CrearPage() {
       setError("Revisa los campos obligatorios.");
       return;
     }
+    if (s.password && (s.password.length < 4 || s.password.length > 32)) {
+      setError("La palabra secreta debe tener entre 4 y 32 caracteres (o déjala vacía).");
+      return;
+    }
     const { main, items } = buildPayload();
     setSending(true);
     try {
@@ -270,6 +278,8 @@ export default function CrearPage() {
               body: m.body.trim().slice(0, 200),
               assetKey: m.assetKey ?? null,
             })),
+          password: s.password || null,
+          passwordHint: s.passwordHint.trim() || null,
           spotifyTrackId: spotifyId,
           photos: photos
             .filter((p) => p.key && p.url)
@@ -287,6 +297,11 @@ export default function CrearPage() {
       const { id, manageToken } = data as { id: string; manageToken: string };
       try {
         localStorage.removeItem(STORE_KEY);
+        // Para la pantalla de éxito (QR/tarjeta): nombre + plantilla.
+        sessionStorage.setItem(
+          "openletter-last",
+          JSON.stringify({ recipientName: s.recipientName.trim(), templateId: template.id }),
+        );
       } catch { /* noop */ }
       photos.forEach((p) => URL.revokeObjectURL(p.preview));
       router.push(`/crear/exito/${id}#token=${manageToken}`);
@@ -490,6 +505,10 @@ export default function CrearPage() {
                   onPatch={(p) => patch({ style: { ...s.style, ...p } })}
                   photoCount={photos.filter((p) => p.key).length}
                   sectionCount={sectionCount}
+                  password={s.password}
+                  setPassword={(password) => patch({ password })}
+                  passwordHint={s.passwordHint}
+                  setPasswordHint={(passwordHint) => patch({ passwordHint })}
                 />
               )}
             </motion.div>

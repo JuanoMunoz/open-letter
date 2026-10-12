@@ -60,6 +60,14 @@ export const letterThemeSchema = z.object({
 
 export const openingSchema = z.enum(THEME_OPENINGS);
 
+export const replySchema = z.object({
+  emoji: z.enum(["❤️", "🥹", "😂", "🥰", "🙏", "🔥"]),
+  message: z.string().trim().max(280).optional().default(""),
+  website: z.string().max(0).optional().default(""),
+});
+
+export const REPLY_EMOJIS = ["❤️", "🥹", "😂", "🥰", "🙏", "🔥"] as const;
+
 export const templateIdSchema = z.enum([
   "amor",
   "aniversario",
@@ -92,6 +100,9 @@ export const createLetterSchema = z.object({
   theme: letterThemeSchema.optional().default({}),
   opening: openingSchema.optional(),
   locale: z.enum(["es"]).optional().default("es"),
+  /** Palabra secreta opcional (4–32) + pista visible (≤80). */
+  password: z.string().max(32).optional().nullable(),
+  passwordHint: z.string().max(80).optional().nullable(),
   /** Honeypot anti-bots: debe venir vacío. */
   website: z.string().max(0).optional().default(""),
 });
